@@ -64,6 +64,9 @@ class DbusHelper:
             '/FirmwareVersion': {'value': '1.0.0', 'text': 'Firmware Version'}, # Firmware version
             '/Connected': {'value': 0, 'text': 'Connected'},  # Connection status (0/1)
             '/Status': {'value': 0, 'text': 'Status'},        # Service status (0=Offline, 1=Running)
+            '/Mgmt/ProcessName': {'value': 'dbus-mppsolar', 'text': 'Process Name'},  # Process name for management
+            '/Mgmt/ProcessVersion': {'value': '1.0.0', 'text': 'Process Version'},    # Process version
+            '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
         }
 
     def setup_vedbus(self) -> bool:
