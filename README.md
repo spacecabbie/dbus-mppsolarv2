@@ -148,28 +148,76 @@ This service integrates with Venus OS components:
 - **VRM portal**: Remote monitoring and control
 - **Venus OS apps**: Display inverter data in the GUI
 
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 dbus-mppsolar/
-├── dbus-mppsolar.py      # Main service entry point
-├── battery.py            # MPP Solar battery/inverter implementation
-├── dbushelper.py         # D-Bus helper for Venus OS integration
-├── utils.py              # Configuration and utility functions
-├── config.default.ini    # Default configuration template
-├── service/              # Systemd service files
-├── test/                 # Test scripts
-└── *.sh                  # Installation and control scripts
+├── README.md                           # 📖 Project documentation and installation guide
+├── pyproject.toml                      # ⚙️ Python project configuration with dependencies
+├── dbus-mppsolar.py                    # 🚀 Main D-Bus service entry point and main loop
+├── standalone_mppsolar_test.py         # 🧪 Standalone testing script for device connection
+├── dbus-mppsolar/                      # 📁 Core service modules directory
+│   ├── battery.py                      # 🔋 MPP Solar inverter device implementation
+│   ├── dbushelper.py                   # 🔌 D-Bus communication helper for Venus OS
+│   ├── utils.py                        # 🛠️ Configuration management and utility functions
+│   ├── config.default.ini              # ⚙️ Default configuration template
+│   └── dbus-mppsolar.py                # 🔄 Alternative service entry point (duplicate)
+├── service/                            # 🔧 Systemd service configuration
+│   └── com.victronenergy.mppsolar.service # 📋 Systemd service definition file
+├── test/                               # 🧪 Testing directory
+│   └── README.md                       # 📋 Test documentation and usage instructions
+├── .github/                            # 🔧 GitHub repository configuration
+│   └── copilot-instructions.md         # 🤖 AI assistant instructions for development
+├── *.sh                                # 📜 Shell scripts for service management
+│   ├── install.sh                      # 📦 Automated installation script
+│   ├── uninstall.sh                    # 🗑️ Service removal script
+│   ├── enable.sh                       # ✅ Enable systemd service
+│   ├── disable.sh                      # ❌ Disable systemd service
+│   ├── restart.sh                      # 🔄 Restart service script
+│   └── start-mppsolar.sh               # ▶️ Manual service start script
+├── bms/                                # 🔋 Empty directory (reserved for future BMS drivers)
+├── ext/                                # 📦 Empty directory (reserved for external dependencies)
+├── qml/                                # 🎨 Empty directory (reserved for QML UI components)
+└── rc/                                 # 🔧 Empty directory (reserved for runtime configuration)
 ```
 
-### Testing
+### 📁 Directory and File Details
 
-Run the test suite:
-```bash
-python3 -m pytest test/
-```
+#### **Root Level Files**
+- **`README.md`** - Comprehensive project documentation including installation, configuration, usage, and troubleshooting
+- **`pyproject.toml`** - Python project configuration defining dependencies (mpp-solar, pyserial, dbus-python, gobject)
+- **`dbus-mppsolar.py`** - Main service entry point that initializes D-Bus, sets up the MPP service, and runs the main event loop
+- **`standalone_mppsolar_test.py`** - Independent testing script to verify MPP Solar device connection and data retrieval
+
+#### **Core Service Directory (`dbus-mppsolar/`)**
+- **`battery.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
+- **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
+- **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
+- **`config.default.ini`** - Template configuration file with default settings for port, baud rate, protocol, and timeouts
+- **`dbus-mppsolar.py`** - Alternative/duplicate service entry point (may be redundant)
+
+#### **Service Configuration (`service/`)**
+- **`com.victronenergy.mppsolar.service`** - Systemd service definition for automatic startup and management
+
+#### **Testing (`test/`)**
+- **`README.md`** - Documentation for testing procedures and expected results
+
+#### **GitHub Configuration (`.github/`)**
+- **`copilot-instructions.md`** - Instructions for AI assistants on project development guidelines and workflow
+
+#### **Management Scripts (`*.sh`)**
+- **`install.sh`** - Automated installation script that sets up dependencies, copies files, and configures systemd
+- **`uninstall.sh`** - Removes the service, cleans up files, and disables systemd service
+- **`enable.sh`** - Enables the systemd service for automatic startup
+- **`disable.sh`** - Disables the systemd service
+- **`restart.sh`** - Restarts the running service
+- **`start-mppsolar.sh`** - Manual service startup script
+
+#### **Reserved Directories**
+- **`bms/`** - Empty directory reserved for future BMS (Battery Management System) driver implementations
+- **`ext/`** - Empty directory for external dependencies and libraries
+- **`qml/`** - Empty directory for QML user interface components (if GUI development is added)
+- **`rc/`** - Empty directory for runtime configuration scripts and hooks
 
 ## License
 
