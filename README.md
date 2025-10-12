@@ -231,8 +231,232 @@ MIT License - see LICENSE file for details
 4. Add tests if applicable
 5. Submit a pull request
 
-## Acknowledgments
+## Code Architecture & Flow Diagrams
 
-- Based on [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) by mr-manuel
-- Uses [mpp-solar](https://github.com/jblance/mpp-solar) package by jblance
-- Compatible with [Venus OS](https://github.com/victronenergy/venus) by Victron Energy
+### 🏗️ Class Diagram
+
+```mermaid
+classDiagram
+    class MPPService {
+        +battery: Battery
+        +dbus_helper: DbusHelper
+        +mainloop: MainLoop
+        +running: bool
+        +__init__()
+        +setup() bool
+        +run() void
+        -_update_data() bool
+        -_signal_handler(signum, frame) void
+    }
+
+    class Battery {
+        +port: str
+        +baud_rate: int
+        +protocol: str
+        +mpp_device: MPP
+        +online: bool
+        +voltage: float
+        +current: float
+        +power: float
+        +ac_voltage: float
+        +ac_current: float
+        +frequency: float
+        +__init__(port, baud, address)
+        +test_connection() bool
+        +refresh_data() bool
+        -_init_device() void
+        -_parse_status_data(data) void
+        +get_settings() bool
+        +unique_identifier() str
+        +connection_name() str
+        +custom_name() str
+        +product_name() str
+        +use_callback(callback) bool
+        +get_allow_to_charge() bool
+        +get_allow_to_discharge() bool
+        +validate_data() bool
+    }
+
+    class DbusHelper {
+        +battery: Battery
+        +dbus_service: VeDbusService
+        +_paths: Dict
+        +_dbus_paths: Dict
+        +__init__(battery)
+        +setup_vedbus() bool
+        +publish_battery() bool
+        +publish_dbus() bool
+    }
+
+    class Utils {
+        +logger: Logger
+        +config: ConfigParser
+        +get_config_value(key, section, default) Any
+        +get_bool_from_config(key, section, default) bool
+        +safe_number_format(value, format) str
+    }
+
+    MPPService --> Battery : creates
+    MPPService --> DbusHelper : creates
+    Battery --> Utils : uses
+    DbusHelper --> Utils : uses
+    DbusHelper --> Battery : monitors
+
+    note for MPPService "Main service orchestrator\nManages service lifecycle"
+    note for Battery "MPP Solar device handler\nCommunicates with inverter"
+    note for DbusHelper "D-Bus interface manager\nPublishes data to Venus OS"
+    note for Utils "Configuration & utilities\nLogging, config loading"
+```
+
+### 🔄 Execution Flow Diagram
+
+```mermaid
+flowchart TD
+    A[🚀 dbus-mppsolar.py] --> B[main()]
+    B --> C[DBusGMainLoop(set_as_default=True)]
+    C --> D[Create MPPService instance]
+    D --> E[service.setup()]
+    E --> F{Setup successful?}
+    F -->|No| G[Log error & exit]
+    F -->|Yes| H[service.run()]
+
+    H --> I[Setup signal handlers]
+    I --> J[Publish initial data]
+    J --> K[Create GLib MainLoop]
+    K --> L[Add periodic timer<br/>every 1000ms]
+    L --> M[Start main loop<br/>blocking call]
+
+    M --> N[_update_data timer fires]
+    N --> O[battery.refresh_data()]
+    O --> P{Data refresh<br/>successful?}
+    P -->|Yes| Q[dbus_helper.publish_battery()]
+    P -->|No| R[Log error]
+    Q --> S[Return True<br/>continue timer]
+    R --> S
+
+    M --> T[Signal received<br/>SIGTERM/SIGINT]
+    T --> U[_signal_handler called]
+    U --> V[mainloop.quit()]
+    V --> W[Set running = False]
+    W --> X[Exit main loop]
+    X --> Y[Service shutdown<br/>complete]
+
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style H fill:#e8f5e8
+    style N fill:#fff3e0
+    style T fill:#ffebee
+```
+
+### 📊 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant M as main()
+    participant S as MPPService
+    participant B as Battery
+    participant D as DbusHelper
+    participant DB as D-Bus
+
+    M->>S: MPPService()
+    S->>B: Battery()
+    B->>B: _init_device()
+    B->>B: test_connection()
+    S->>D: DbusHelper(battery)
+    D->>D: setup_vedbus()
+    D->>DB: Create VeDbusService
+    D->>DB: Add D-Bus paths
+
+    M->>S: setup()
+    S->>B: test_connection()
+    B-->>S: connection result
+    S->>D: setup_vedbus()
+    D-->>S: setup result
+    S-->>M: setup result
+
+    M->>S: run()
+    S->>D: publish_battery()
+    D->>DB: Publish initial data
+    S->>S: Setup signal handlers
+    S->>S: Create MainLoop
+    S->>S: Add timer (1000ms)
+
+    loop Periodic updates
+        S->>S: _update_data()
+        S->>B: refresh_data()
+        B->>B: get_general_status()
+        B->>B: _parse_status_data()
+        B-->>S: data
+        S->>D: publish_battery()
+        D->>DB: Update D-Bus paths
+    end
+
+    Note over M,DB: Service runs until signal received
+    M->>S: Signal handler
+    S->>S: mainloop.quit()
+```
+
+### 🔧 Data Flow & Dependencies
+
+```mermaid
+graph LR
+    subgraph "Configuration Layer"
+        CFG[config.default.ini] --> U[utils.py]
+        CFG --> B[battery.py]
+    end
+
+    subgraph "Communication Layer"
+        MPP[mpp-solar package] --> B
+        SERIAL[Serial Port<br/>/dev/ttyUSB0] --> B
+    end
+
+    subgraph "Service Layer"
+        B --> S[dbus-mppsolar.py<br/>MPPService]
+        U --> S
+        D[dbushelper.py<br/>DbusHelper] --> S
+    end
+
+    subgraph "Integration Layer"
+        S --> DBUS[D-Bus System Bus]
+        D --> DBUS
+        DBUS --> VRM[Venus OS<br/>VRM Portal]
+        DBUS --> GUI[Venus OS<br/>GUI Apps]
+    end
+
+    subgraph "Management Layer"
+        INST[install.sh] --> SYS[systemd service]
+        EN[enable.sh] --> SYS
+        START[start-mppsolar.sh] --> S
+        TEST[standalone_mppsolar_test.py] --> B
+    end
+
+    style CFG fill:#e3f2fd
+    style MPP fill:#f3e5f5
+    style S fill:#e8f5e8
+    style DBUS fill:#fff3e0
+    style INST fill:#fce4ec
+```
+
+### 📋 Component Relationships Explained
+
+#### **Class Relationships:**
+- **MPPService** → **Battery**: Creates and manages the battery instance
+- **MPPService** → **DbusHelper**: Creates and manages the D-Bus interface
+- **Battery** → **Utils**: Uses logging and configuration utilities
+- **DbusHelper** → **Utils**: Uses logging and D-Bus constants
+- **DbusHelper** → **Battery**: Monitors battery data for publishing
+
+#### **Execution Flow:**
+1. **Entry Point**: `dbus-mppsolar.py:main()` initializes D-Bus and creates service
+2. **Setup Phase**: Service initializes battery connection and D-Bus interface
+3. **Runtime Phase**: Main loop runs with periodic data updates every 1 second
+4. **Data Flow**: Battery → MPPService → DbusHelper → D-Bus → Venus OS
+5. **Shutdown**: Signal handlers gracefully stop the service
+
+#### **Key Data Paths:**
+- **AC Data**: `ac_voltage`, `ac_current`, `ac_power`, `frequency`
+- **DC Data**: `voltage`, `current`, `power` (mapped from AC for compatibility)
+- **Status**: `online`, `connection_info`, `soc`, `capacity`
+- **D-Bus Paths**: `/Ac/Out/L1/*`, `/Dc/0/*`, `/Connected`, `/Status`
+
+This architecture provides a clean separation between device communication, data processing, and system integration, making it maintainable and extensible for Venus OS compatibility.
