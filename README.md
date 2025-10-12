@@ -4,6 +4,11 @@ Venus OS D-Bus service for MPP Solar inverters, specifically designed for PI30 m
 
 This service adapts the [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) codebase to work with MPP Solar inverters using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package.
 
+## Disclaimer
+
+**Initial code conversion via Grok xAI**  
+**Modifications and Testing by: HHaufe (spacecabbie)**
+
 ## Features
 
 - D-Bus integration with Venus OS
