@@ -312,40 +312,46 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    A[🚀 dbus-mppsolar.py] --> B[main()]
-    B --> C[DBusGMainLoop(set_as_default=True)]
-    C --> D[Create MPPService instance]
-    D --> E[service.setup()]
-    E --> F{Setup successful?}
-    F -->|No| G[Log error & exit]
-    F -->|Yes| H[service.run()]
+    A["dbus-mppsolar.py"] --> B["main()"]
+    B --> C["DBusGMainLoop set_as_default=True"]
+    C --> D["Create MPPService instance"]
+    D --> E["service.setup()"]
+    E --> F{"Setup successful?"}
+    F -->|"No"| G["Log error & exit"]
+    F -->|"Yes"| H["service.run()"]
 
-    H --> I[Setup signal handlers]
-    I --> J[Publish initial data]
-    J --> K[Create GLib MainLoop]
-    K --> L[Add periodic timer<br/>every 1000ms]
-    L --> M[Start main loop<br/>blocking call]
+    H --> I["Setup signal handlers"]
+    I --> J["Publish initial data"]
+    J --> K["Create GLib MainLoop"]
+    K --> L["Add periodic timer every 1000ms"]
+    L --> M["Start main loop blocking call"]
 
-    M --> N[_update_data timer fires]
-    N --> O[battery.refresh_data()]
-    O --> P{Data refresh<br/>successful?}
-    P -->|Yes| Q[dbus_helper.publish_battery()]
-    P -->|No| R[Log error]
-    Q --> S[Return True<br/>continue timer]
+    M --> N["_update_data timer fires"]
+    N --> O["battery.refresh_data()"]
+    O --> P{"Data refresh successful?"}
+    P -->|"Yes"| Q["dbus_helper.publish_battery()"]
+    P -->|"No"| R["Log error"]
+    Q --> S["Return True continue timer"]
     R --> S
 
-    M --> T[Signal received<br/>SIGTERM/SIGINT]
-    T --> U[_signal_handler called]
-    U --> V[mainloop.quit()]
-    V --> W[Set running = False]
-    W --> X[Exit main loop]
-    X --> Y[Service shutdown<br/>complete]
+    M --> T["Signal received SIGTERM/SIGINT"]
+    T --> U["_signal_handler called"]
+    U --> V["mainloop.quit()"]
+    V --> W["Set running = False"]
+    W --> X["Exit main loop"]
+    X --> Y["Service shutdown complete"]
 
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style H fill:#e8f5e8
-    style N fill:#fff3e0
-    style T fill:#ffebee
+    classDef entry fill:#e1f5fe
+    classDef setup fill:#f3e5f5
+    classDef runtime fill:#e8f5e8
+    classDef update fill:#fff3e0
+    classDef shutdown fill:#ffebee
+
+    class A entry
+    class B,C,D,E setup
+    class H,I,J,K,L,M runtime
+    class N,O,P,Q,R,S update
+    class T,U,V,W,X,Y shutdown
 ```
 
 ### 📊 Sequence Diagram
@@ -379,7 +385,7 @@ sequenceDiagram
     D->>DB: Publish initial data
     S->>S: Setup signal handlers
     S->>S: Create MainLoop
-    S->>S: Add timer (1000ms)
+    S->>S: Add timer 1000ms
 
     loop Periodic updates
         S->>S: _update_data()
@@ -401,40 +407,46 @@ sequenceDiagram
 ```mermaid
 graph LR
     subgraph "Configuration Layer"
-        CFG[config.default.ini] --> U[utils.py]
-        CFG --> B[battery.py]
+        CFG["config.default.ini"] --> U["utils.py"]
+        CFG --> B["battery.py"]
     end
 
     subgraph "Communication Layer"
-        MPP[mpp-solar package] --> B
-        SERIAL[Serial Port<br/>/dev/ttyUSB0] --> B
+        MPP["mpp-solar package"] --> B
+        SERIAL["Serial Port /dev/ttyUSB0"] --> B
     end
 
     subgraph "Service Layer"
-        B --> S[dbus-mppsolar.py<br/>MPPService]
+        B --> S["dbus-mppsolar.py MPPService"]
         U --> S
-        D[dbushelper.py<br/>DbusHelper] --> S
+        D["dbushelper.py DbusHelper"] --> S
     end
 
     subgraph "Integration Layer"
-        S --> DBUS[D-Bus System Bus]
+        S --> DBUS["D-Bus System Bus"]
         D --> DBUS
-        DBUS --> VRM[Venus OS<br/>VRM Portal]
-        DBUS --> GUI[Venus OS<br/>GUI Apps]
+        DBUS --> VRM["Venus OS VRM Portal"]
+        DBUS --> GUI["Venus OS GUI Apps"]
     end
 
     subgraph "Management Layer"
-        INST[install.sh] --> SYS[systemd service]
-        EN[enable.sh] --> SYS
-        START[start-mppsolar.sh] --> S
-        TEST[standalone_mppsolar_test.py] --> B
+        INST["install.sh"] --> SYS["systemd service"]
+        EN["enable.sh"] --> SYS
+        START["start-mppsolar.sh"] --> S
+        TEST["standalone_mppsolar_test.py"] --> B
     end
 
-    style CFG fill:#e3f2fd
-    style MPP fill:#f3e5f5
-    style S fill:#e8f5e8
-    style DBUS fill:#fff3e0
-    style INST fill:#fce4ec
+    classDef config fill:#e3f2fd
+    classDef comm fill:#f3e5f5
+    classDef service fill:#e8f5e8
+    classDef integration fill:#fff3e0
+    classDef management fill:#fce4ec
+
+    class CFG config
+    class MPP,SERIAL comm
+    class B,U,S,D service
+    class DBUS,VRM,GUI integration
+    class INST,EN,START,TEST,SYS management
 ```
 
 ### 📋 Component Relationships Explained
