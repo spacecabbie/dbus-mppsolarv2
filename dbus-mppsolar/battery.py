@@ -54,6 +54,9 @@ class Battery(ABC):
         self.online = False  # Whether device is connected and responding
         self.connection_info = "Initializing..."  # Status message
 
+        # Device identification
+        self.serial_number = None  # Device serial number for uniqueness
+
         # Basic battery parameters (adapted for inverter)
         self.voltage = None  # DC voltage (not directly applicable to inverters)
         self.current = None  # DC current
@@ -114,6 +117,11 @@ class Battery(ABC):
             if result:
                 self.online = True
                 self.connection_info = f"Connected to {self.port}"
+                # Store serial number if available
+                if isinstance(result, dict) and 'serial' in result:
+                    self.serial_number = result['serial']
+                elif isinstance(result, dict) and 'serial_number' in result:
+                    self.serial_number = result['serial_number']
                 logger.info("MPP Solar device connection successful")
                 return True
             else:
@@ -215,10 +223,13 @@ class Battery(ABC):
         Return unique identifier for this device.
 
         Used for device identification in Venus OS.
+        Prefers serial number for uniqueness, falls back to port/protocol.
 
         Returns:
             str: Unique identifier string
         """
+        if self.serial_number:
+            return f"mppsolar_{self.serial_number}"
         return f"mppsolar_{self.port}_{self.protocol}"
 
     def connection_name(self) -> str:

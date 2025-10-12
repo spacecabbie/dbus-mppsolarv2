@@ -67,8 +67,16 @@ class MPPService:
                 logger.error("Failed to connect to MPP Solar device")
                 return False
 
+            # Get unique identifier for device instance assignment
+            unique_id = self.battery.unique_identifier()
+            logger.info(f"Device unique identifier: {unique_id}")
+
+            # Get device instance from LocalSettings
+            device_instance = self._get_device_instance(unique_id)
+            logger.info(f"Assigned device instance: {device_instance}")
+
             # Initialize D-Bus helper for Venus OS integration
-            self.dbus_helper = DbusHelper(self.battery)
+            self.dbus_helper = DbusHelper(self.battery, device_instance)
             if not self.dbus_helper.setup_vedbus():
                 logger.error("Failed to setup D-Bus service")
                 return False
@@ -79,6 +87,50 @@ class MPPService:
         except Exception as e:
             logger.error(f"Error during service setup: {e}")
             return False
+
+    def _get_device_instance(self, unique_id: str) -> int:
+        """
+        Get device instance from LocalSettings.
+
+        Uses Venus OS LocalSettings to assign a unique device instance
+        for this device. For PV inverters, uses class 'pvinverter'.
+
+        Args:
+            unique_id: Unique identifier for the device
+
+        Returns:
+            int: Assigned device instance number
+        """
+        try:
+            # Connect to system bus
+            bus = dbus.SystemBus()
+
+            # Get settings service
+            settings = bus.get_object('com.victronenergy.settings', '/')
+
+            # Calculate preferred instance based on port
+            # For serial ports: ttyUSBx -> 288 + x
+            port = self.battery.port
+            preferred_instance = 288  # default for ttyUSB0
+            if 'ttyUSB' in port:
+                try:
+                    x = int(port.split('ttyUSB')[1])
+                    preferred_instance = 288 + x
+                except (ValueError, IndexError):
+                    pass
+
+            # Add setting for this device
+            settings_path = f'/Settings/Devices/{unique_id}/ClassAndVrmInstance'
+            settings.AddSetting(settings_path, ('pvinverter', preferred_instance))
+
+            # Get the assigned instance
+            instance = settings.GetValue(settings_path)
+            return int(instance)
+
+        except Exception as e:
+            logger.warning(f"Failed to get device instance from LocalSettings: {e}")
+            # Fallback to default instance
+            return 0
 
     def run(self) -> None:
         """

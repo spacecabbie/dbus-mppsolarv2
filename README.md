@@ -114,8 +114,15 @@ The service publishes the following D-Bus paths:
 - `/Dc/0/Voltage` - DC input voltage
 - `/Dc/0/Current` - DC input current
 - `/Dc/0/Power` - DC input power
+- `/DeviceInstance` - Device instance ID (dynamically assigned)
+- `/ProductId` - Product ID
+- `/ProductName` - Product name
+- `/FirmwareVersion` - Firmware version
 - `/Connected` - Connection status (0/1)
 - `/Status` - Service status (0=Offline, 1=Running)
+- `/Mgmt/ProcessName` - Process name (dbus-mppsolar)
+- `/Mgmt/ProcessVersion` - Process version (1.0.0)
+- `/Mgmt/Connection` - Connection type (Serial USB)
 
 ## Troubleshooting
 

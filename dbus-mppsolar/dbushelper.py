@@ -35,7 +35,7 @@ class DbusHelper:
     Based on the dbus-serialbattery DbusHelper but adapted for inverter data.
     """
 
-    def __init__(self, battery):
+    def __init__(self, battery, device_instance: int = 0):
         """
         Initialize D-Bus helper.
 
@@ -43,8 +43,10 @@ class DbusHelper:
 
         Args:
             battery: Battery instance (MPP Solar inverter) to monitor
+            device_instance: Device instance number for uniqueness
         """
         self.battery = battery  # Reference to the battery/inverter instance
+        self.device_instance = device_instance  # Device instance for uniqueness
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
 
@@ -58,7 +60,7 @@ class DbusHelper:
             '/Dc/0/Voltage': {'value': None, 'text': 'DC Voltage'},  # DC input voltage
             '/Dc/0/Current': {'value': None, 'text': 'DC Current'},  # DC input current
             '/Dc/0/Power': {'value': None, 'text': 'DC Power'},      # DC input power
-            '/DeviceInstance': {'value': 0, 'text': 'Device Instance'}, # Device instance ID
+            '/DeviceInstance': {'value': self.device_instance, 'text': 'Device Instance'}, # Device instance ID
             '/ProductId': {'value': PRODUCT_ID, 'text': 'Product ID'},   # Product identifier
             '/ProductName': {'value': PRODUCT_NAME, 'text': 'Product Name'}, # Product name
             '/FirmwareVersion': {'value': '1.0.0', 'text': 'Firmware Version'}, # Firmware version
