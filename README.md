@@ -147,13 +147,293 @@ Check service logs:
 journalctl -u com.victronenergy.mppsolar.service -n 50
 ```
 
-## Venus OS Integration
+## Deployment on Venus OS
 
-This service integrates with Venus OS components:
+### Prerequisites
 
-- **GX devices**: Cerbo GX, CCGX, etc.
-- **VRM portal**: Remote monitoring and control
-- **Venus OS apps**: Display inverter data in the GUI
+- Venus OS device (Cerbo GX, CCGX, etc.) with SSH access
+- MPP Solar inverter (PI30 series) connected via USB or serial
+- Internet connection for package installation
+
+### Access Methods
+
+#### Direct SSH Access
+```bash
+ssh root@venus-device-ip
+# Default password: (check device label or use VictronConnect)
+```
+
+#### Via Venus OS Large (if available)
+```bash
+# Connect to Venus OS Large and use terminal
+```
+
+### Installation
+
+#### Method 1: Automatic Installation (Recommended)
+
+1. **Transfer the service files to Venus OS:**
+   ```bash
+   # From your local machine
+   scp -r dbus-mppsolar root@venus-device:/opt/victronenergy/
+   ```
+
+2. **Connect to Venus OS and run installation:**
+   ```bash
+   ssh root@venus-device
+   cd /opt/victronenergy/dbus-mppsolar
+   ./install.sh
+   ```
+
+3. **Verify installation:**
+   ```bash
+   systemctl status com.victronenergy.mppsolar.service
+   ```
+
+#### Method 2: Manual Installation
+
+1. **Install Python dependencies:**
+   ```bash
+   ssh root@venus-device
+   pip3 install mpp-solar pyserial dbus-python gobject
+   ```
+
+2. **Copy service files:**
+   ```bash
+   cp -r dbus-mppsolar /opt/victronenergy/
+   cp service/com.victronenergy.mppsolar.service /etc/systemd/system/
+   ```
+
+3. **Configure and start service:**
+   ```bash
+   cd /opt/victronenergy/dbus-mppsolar
+   cp config.default.ini config.ini
+   nano config.ini  # Edit configuration as needed
+   
+   systemctl daemon-reload
+   systemctl enable com.victronenergy.mppsolar.service
+   systemctl start com.victronenergy.mppsolar.service
+   ```
+
+### Configuration
+
+Edit `/opt/victronenergy/dbus-mppsolar/config.ini`:
+
+```ini
+[MPPSOLAR]
+PORT = /dev/ttyUSB0          # Serial port (check with ls /dev/ttyUSB*)
+BAUD_RATE = 2400            # Communication baud rate
+PROTOCOL = PI30             # MPP Solar protocol
+TIMEOUT = 5                 # Connection timeout in seconds
+```
+
+**Find the correct serial port:**
+```bash
+ls /dev/ttyUSB* /dev/ttyACM* /dev/ttyS*
+dmesg | grep tty  # Check recent serial device connections
+```
+
+### Testing
+
+#### 1. Standalone Connection Test
+
+Test the MPP Solar device connection independently:
+
+```bash
+cd /opt/victronenergy/dbus-mppsolar
+python3 standalone_mppsolar_test.py
+```
+
+Expected output:
+```
+MPP Solar Device Test
+=====================
+Port: /dev/ttyUSB0
+Baud Rate: 2400
+Protocol: PI30
+
+Testing connection...
+✓ Connection successful!
+Device Info: {...}
+Status Data: {...}
+```
+
+#### 2. Service Status Check
+
+```bash
+# Check if service is running
+systemctl status com.victronenergy.mppsolar.service
+
+# View service logs
+journalctl -u com.victronenergy.mppsolar.service -f
+
+# Restart service
+systemctl restart com.victronenergy.mppsolar.service
+```
+
+#### 3. D-Bus Path Verification
+
+Check if D-Bus paths are published correctly:
+
+```bash
+# List all D-Bus services
+dbus -y com.victronenergy.inverter /DeviceInstance GetValue
+
+# Check specific paths
+dbus -y com.victronenergy.inverter /Ac/Out/L1/V GetValue
+dbus -y com.victronenergy.inverter /Connected GetValue
+dbus -y com.victronenergy.inverter /ProductName GetValue
+```
+
+#### 4. Venus OS GUI Verification
+
+1. **Via VictronConnect:**
+   - Connect to your Venus OS device
+   - Check if the MPP Solar inverter appears in the device list
+   - Verify data is updating in real-time
+
+2. **Via VRM Portal:**
+   - Access https://vrm.victronenergy.com
+   - Check if inverter data appears in the dashboard
+   - Verify historical data logging
+
+3. **Via Venus OS Web Interface:**
+   - Access the device web interface
+   - Check Settings → System Setup → Device List
+   - Verify inverter appears with correct device instance
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Service won't start:**
+   ```bash
+   # Check service status and logs
+   systemctl status com.victronenergy.mppsolar.service
+   journalctl -u com.victronenergy.mppsolar.service -n 50
+   
+   # Check for Python errors
+   python3 -c "import mpp-solar; print('MPP Solar OK')"
+   ```
+
+2. **Connection failed:**
+   ```bash
+   # Check serial port permissions
+   ls -la /dev/ttyUSB0
+   
+   # Test serial connection manually
+   python3 -c "
+   import serial
+   ser = serial.Serial('/dev/ttyUSB0', 2400, timeout=1)
+   print('Serial port OK')
+   ser.close()
+   "
+   ```
+
+3. **D-Bus errors:**
+   ```bash
+   # Check D-Bus is running
+   systemctl status dbus
+   
+   # List D-Bus services
+   dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames
+   ```
+
+4. **Device not appearing in GUI:**
+   ```bash
+   # Check device instance
+   dbus -y com.victronenergy.inverter /DeviceInstance GetValue
+   
+   # Restart GUI services
+   systemctl restart venus-gui
+   ```
+
+#### Debug Mode
+
+Enable debug logging by modifying the service:
+
+```bash
+# Edit service file
+nano /etc/systemd/system/com.victronenergy.mppsolar.service
+
+# Add to ExecStart:
+# --log-level DEBUG
+
+# Reload and restart
+systemctl daemon-reload
+systemctl restart com.victronenergy.mppsolar.service
+```
+
+#### Log Analysis
+
+```bash
+# Follow logs in real-time
+journalctl -u com.victronenergy.mppsolar.service -f
+
+# Search for specific errors
+journalctl -u com.victronenergy.mppsolar.service | grep ERROR
+
+# Check system logs for serial issues
+dmesg | grep tty
+```
+
+### Performance Monitoring
+
+Monitor the service performance:
+
+```bash
+# CPU and memory usage
+ps aux | grep dbus-mppsolar
+
+# D-Bus activity
+dbus-monitor --system "type='signal',sender='com.victronenergy.inverter'"
+
+# System resource usage
+top -p $(pgrep -f dbus-mppsolar)
+```
+
+### Backup and Recovery
+
+```bash
+# Backup configuration
+cp /opt/victronenergy/dbus-mppsolar/config.ini /opt/victronenergy/dbus-mppsolar/config.ini.backup
+
+# Full service backup
+tar -czf dbus-mppsolar-backup.tar.gz /opt/victronenergy/dbus-mppsolar/
+
+# Restore from backup
+tar -xzf dbus-mppsolar-backup.tar.gz -C /
+systemctl restart com.victronenergy.mppsolar.service
+```
+
+### Updating the Service
+
+```bash
+# Stop service
+systemctl stop com.victronenergy.mppsolar.service
+
+# Backup current version
+mv /opt/victronenergy/dbus-mppsolar /opt/victronenergy/dbus-mppsolar.old
+
+# Install new version
+# (transfer and install as described above)
+
+# Restore configuration
+cp /opt/victronenergy/dbus-mppsolar.old/config.ini /opt/victronenergy/dbus-mppsolar/
+
+# Start service
+systemctl start com.victronenergy.mppsolar.service
+```
+
+### Support
+
+If you encounter issues:
+
+1. Check the logs: `journalctl -u com.victronenergy.mppsolar.service -n 100`
+2. Verify hardware connections and serial port
+3. Test with standalone script: `python3 standalone_mppsolar_test.py`
+4. Check Venus OS version compatibility
+5. Report issues with full logs and configuration details
 
 ## Project Structure
 
