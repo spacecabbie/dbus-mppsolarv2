@@ -175,9 +175,10 @@ ssh root@venus-device-ip
 1. **Clone the repository on your Venus OS device:**
    ```bash
    ssh root@venus-device
-   cd /opt/victronenergy
-   git clone https://github.com/spacecabbie/dbus-mppsolarv2.git dbus-mppsolar
-   cd dbus-mppsolar
+   mkdir -p /data/etc
+   cd /data/etc
+   git clone https://github.com/spacecabbie/dbus-mppsolarv2.git dbus-mppsolarv2
+   cd dbus-mppsolarv2
    ```
 
 2. **Run the installation script:**
@@ -195,11 +196,12 @@ ssh root@venus-device-ip
 1. **Download and extract on Venus OS:**
    ```bash
    ssh root@venus-device
-   cd /opt/victronenergy
+   mkdir -p /data/etc
+   cd /data/etc
    wget https://github.com/spacecabbie/dbus-mppsolarv2/archive/master.zip
    unzip master.zip
-   mv dbus-mppsolarv2-master dbus-mppsolar
-   cd dbus-mppsolar
+   mv dbus-mppsolarv2-master dbus-mppsolarv2
+   cd dbus-mppsolarv2
    ```
 
 2. **Run the installation script:**
@@ -212,42 +214,19 @@ ssh root@venus-device-ip
 1. **Transfer the service files to Venus OS:**
    ```bash
    # From your local machine (if you have the files locally)
-   scp -r dbus-mppsolar root@venus-device:/opt/victronenergy/
+   scp -r dbus-mppsolar root@venus-device:/data/etc/dbus-mppsolarv2
    ```
 
 2. **Connect to Venus OS and run installation:**
    ```bash
    ssh root@venus-device
-   cd /opt/victronenergy/dbus-mppsolar
+   cd /data/etc/dbus-mppsolarv2
    ./install.sh
-   ```
-
-1. **Install Python dependencies:**
-   ```bash
-   ssh root@venus-device
-   pip3 install mpp-solar pyserial dbus-python gobject
-   ```
-
-2. **Copy service files:**
-   ```bash
-   cp -r dbus-mppsolar /opt/victronenergy/
-   cp service/com.victronenergy.mppsolar.service /etc/systemd/system/
-   ```
-
-3. **Configure and start service:**
-   ```bash
-   cd /opt/victronenergy/dbus-mppsolar
-   cp config.default.ini config.ini
-   nano config.ini  # Edit configuration as needed
-   
-   systemctl daemon-reload
-   systemctl enable com.victronenergy.mppsolar.service
-   systemctl start com.victronenergy.mppsolar.service
    ```
 
 ### Configuration
 
-Edit `/opt/victronenergy/dbus-mppsolar/config.ini`:
+Edit `/data/etc/dbus-mppsolarv2/config.ini`:
 
 ```ini
 [MPPSOLAR]
@@ -270,7 +249,7 @@ dmesg | grep tty  # Check recent serial device connections
 Test the MPP Solar device connection independently:
 
 ```bash
-cd /opt/victronenergy/dbus-mppsolar
+cd /data/etc/dbus-mppsolarv2
 python3 standalone_mppsolar_test.py
 ```
 
@@ -426,13 +405,13 @@ top -p $(pgrep -f dbus-mppsolar)
 
 ```bash
 # Backup configuration
-cp /opt/victronenergy/dbus-mppsolar/config.ini /opt/victronenergy/dbus-mppsolar/config.ini.backup
+cp /data/etc/dbus-mppsolarv2/config.ini /data/etc/dbus-mppsolarv2/config.ini.backup
 
 # Full service backup
-tar -czf dbus-mppsolar-backup.tar.gz /opt/victronenergy/dbus-mppsolar/
+tar -czf dbus-mppsolarv2-backup.tar.gz /data/etc/dbus-mppsolarv2/
 
 # Restore from backup
-tar -xzf dbus-mppsolar-backup.tar.gz -C /
+tar -xzf dbus-mppsolarv2-backup.tar.gz -C /
 systemctl restart com.victronenergy.mppsolar.service
 ```
 
@@ -445,7 +424,7 @@ systemctl restart com.victronenergy.mppsolar.service
 systemctl stop com.victronenergy.mppsolar.service
 
 # Update from repository
-cd /opt/victronenergy/dbus-mppsolar
+cd /data/etc/dbus-mppsolarv2
 git pull origin master
 
 # Restart service
@@ -459,13 +438,13 @@ systemctl start com.victronenergy.mppsolar.service
 systemctl stop com.victronenergy.mppsolar.service
 
 # Backup current version
-mv /opt/victronenergy/dbus-mppsolar /opt/victronenergy/dbus-mppsolar.old
+mv /data/etc/dbus-mppsolarv2 /data/etc/dbus-mppsolarv2.old
 
 # Install new version
 # (transfer and install as described above)
 
 # Restore configuration
-cp /opt/victronenergy/dbus-mppsolar.old/config.ini /opt/victronenergy/dbus-mppsolar/
+cp /data/etc/dbus-mppsolarv2.old/config.ini /data/etc/dbus-mppsolarv2/
 
 # Start service
 systemctl start com.victronenergy.mppsolar.service
@@ -484,7 +463,7 @@ If you encounter issues:
 ## Project Structure
 
 ```
-dbus-mppsolar/
+dbus-mppsolarv2/
 ├── README.md                           # 📖 Project documentation and installation guide
 ├── pyproject.toml                      # ⚙️ Python project configuration with dependencies
 ├── dbus-mppsolar.py                    # 🚀 Main D-Bus service entry point and main loop
