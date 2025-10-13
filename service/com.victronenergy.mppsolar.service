@@ -5,12 +5,12 @@ Requires=dbus.service
 
 [Service]
 Type=simple
-ExecStart=/opt/victronenergy/dbus-mppsolar/dbus-mppsolar.py
+ExecStart=/data/etc/dbus-mppsolarv2/dbus-mppsolar.py
 Restart=always
 RestartSec=10
 User=root
 Group=root
-Environment=PYTHONPATH=/opt/victronenergy/dbus-mppsolar
+Environment=PYTHONPATH=/data/etc/dbus-mppsolarv2
 
 [Install]
 WantedBy=multi-user.target

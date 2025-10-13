@@ -2,10 +2,10 @@
 # MPP Solar D-Bus service run script
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SERVICE_DIR="/opt/victronenergy/dbus-mppsolar"
+SERVICE_DIR="/data/etc/dbus-mppsolarv2"
 
 # Check if running on Venus OS
-if [ ! -d "/opt/victronenergy" ]; then
+if [ ! -d "/data/etc" ]; then
     echo "Error: This script is designed for Venus OS"
     exit 1
 fi

@@ -15,9 +15,9 @@ from typing import Optional
 # Add current directory to path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import logger, get_config_value, safe_number_format
-from battery import Battery
-from dbushelper import DbusHelper
+from dbus_mppsolar.utils import logger, get_config_value, safe_number_format
+from dbus_mppsolar.battery import Battery
+from dbus_mppsolar.dbushelper import DbusHelper
 
 try:
     import dbus

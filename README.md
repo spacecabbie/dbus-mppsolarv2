@@ -470,7 +470,7 @@ dbus-mppsolarv2/
 ├── pyproject.toml                      # ⚙️ Python project configuration with dependencies
 ├── dbus-mppsolar.py                    # 🚀 Main D-Bus service entry point and main loop
 ├── standalone_mppsolar_test.py         # 🧪 Standalone testing script for device connection
-├── dbus-mppsolar/                      # 📁 Core service modules directory
+├── dbus_mppsolar/                      # 📁 Core service modules directory
 │   ├── battery.py                      # 🔋 MPP Solar inverter device implementation
 │   ├── dbushelper.py                   # 🔌 D-Bus communication helper for Venus OS
 │   ├── utils.py                        # 🛠️ Configuration management and utility functions
@@ -503,7 +503,7 @@ dbus-mppsolarv2/
 - **`dbus-mppsolar.py`** - Main service entry point that initializes D-Bus, sets up the MPP service, and runs the main event loop
 - **`standalone_mppsolar_test.py`** - Independent testing script to verify MPP Solar device connection and data retrieval
 
-#### **Core Service Directory (`dbus-mppsolar/`)**
+#### **Core Service Directory (`dbus_mppsolar/`)**
 - **`battery.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
 - **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
 - **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
