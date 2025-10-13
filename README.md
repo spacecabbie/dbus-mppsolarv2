@@ -170,11 +170,48 @@ ssh root@venus-device-ip
 
 ### Installation
 
-#### Method 1: Automatic Installation (Recommended)
+#### Method 1: Git Clone (Recommended)
+
+1. **Clone the repository on your Venus OS device:**
+   ```bash
+   ssh root@venus-device
+   cd /opt/victronenergy
+   git clone https://github.com/spacecabbie/dbus-mppsolarv2.git dbus-mppsolar
+   cd dbus-mppsolar
+   ```
+
+2. **Run the installation script:**
+   ```bash
+   ./install.sh
+   ```
+
+3. **Verify installation:**
+   ```bash
+   systemctl status com.victronenergy.mppsolar.service
+   ```
+
+#### Method 2: Manual Download
+
+1. **Download and extract on Venus OS:**
+   ```bash
+   ssh root@venus-device
+   cd /opt/victronenergy
+   wget https://github.com/spacecabbie/dbus-mppsolarv2/archive/master.zip
+   unzip master.zip
+   mv dbus-mppsolarv2-master dbus-mppsolar
+   cd dbus-mppsolar
+   ```
+
+2. **Run the installation script:**
+   ```bash
+   ./install.sh
+   ```
+
+#### Method 3: SCP Transfer (Alternative)
 
 1. **Transfer the service files to Venus OS:**
    ```bash
-   # From your local machine
+   # From your local machine (if you have the files locally)
    scp -r dbus-mppsolar root@venus-device:/opt/victronenergy/
    ```
 
@@ -184,13 +221,6 @@ ssh root@venus-device-ip
    cd /opt/victronenergy/dbus-mppsolar
    ./install.sh
    ```
-
-3. **Verify installation:**
-   ```bash
-   systemctl status com.victronenergy.mppsolar.service
-   ```
-
-#### Method 2: Manual Installation
 
 1. **Install Python dependencies:**
    ```bash
@@ -407,6 +437,22 @@ systemctl restart com.victronenergy.mppsolar.service
 ```
 
 ### Updating the Service
+
+#### Method 1: Git Update (Recommended)
+
+```bash
+# Stop service
+systemctl stop com.victronenergy.mppsolar.service
+
+# Update from repository
+cd /opt/victronenergy/dbus-mppsolar
+git pull origin master
+
+# Restart service
+systemctl start com.victronenergy.mppsolar.service
+```
+
+#### Method 2: Manual Update
 
 ```bash
 # Stop service
