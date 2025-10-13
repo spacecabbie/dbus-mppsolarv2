@@ -13,7 +13,7 @@ This directory contains test scripts for the MPP Solar D-Bus service.
 To run the standalone test without D-Bus integration:
 
 ```bash
-cd /opt/victronenergy/dbus-mppsolar
+cd /data/etc/dbus-mppsolarv2
 python3 test/standalone_mppsolar_test.py
 ```
 

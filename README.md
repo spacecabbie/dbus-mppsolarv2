@@ -28,15 +28,17 @@ This service adapts the [dbus-serialbattery](https://github.com/mr-manuel/venus-
 
 ### Automatic Installation (Recommended)
 
-1. Copy the `dbus-mppsolar` directory to your Venus OS device:
+1. SSH into your Venus OS device and clone the repository:
    ```bash
-   scp -r dbus-mppsolar root@venus-device:/opt/victronenergy/
+   ssh root@venus-device
+   mkdir -p /data/etc
+   cd /data/etc
+   git clone https://github.com/spacecabbie/dbus-mppsolarv2.git dbus-mppsolarv2
+   cd dbus-mppsolarv2
    ```
 
 2. Run the installation script:
    ```bash
-   ssh root@venus-device
-   cd /opt/victronenergy/dbus-mppsolar
    ./install.sh
    ```
 
