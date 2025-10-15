@@ -45,13 +45,13 @@ except ImportError as e:
 
 from .utils import logger
 
-class Battery(ABC):
+class Inverter(ABC):
     """
     MPP Solar Inverter implementation for Venus OS D-Bus service.
 
     This class handles communication with MPP Solar inverters using the
-    mpp-solar Python package. It adapts the interface to work with Venus OS
-    D-Bus service, treating the inverter as a "battery" for compatibility.
+    mpp-solar Python package. It provides an interface compatible with
+    Venus OS D-Bus services for inverter monitoring and control.
     """
 
     def __init__(self, port: str = None, baud: int = 2400, address: str = None):
@@ -80,7 +80,7 @@ class Battery(ABC):
         # Device identification
         self.serial_number = None  # Device serial number for uniqueness
 
-        # Basic inverter parameters (adapted for battery interface compatibility)
+        # Basic inverter parameters (for D-Bus compatibility)
         self.voltage = None  # DC voltage (mapped from AC output)
         self.current = None  # DC current (mapped from AC output)
         self.power = None  # DC power (mapped from AC output)
@@ -222,7 +222,7 @@ class Battery(ABC):
             if self.ac_power:
                 self.power = self.ac_power  # DC power equivalent
 
-            # Set basic battery values (placeholders for D-Bus compatibility)
+            # Set basic inverter values (placeholders for D-Bus compatibility)
             self.soc = 100  # Inverters always show 100% "charge"
             self.capacity = 10000  # Placeholder capacity in Wh
 

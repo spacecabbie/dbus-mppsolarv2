@@ -38,17 +38,17 @@ class DbusHelper:
     Based on the dbus-serialbattery DbusHelper but adapted for inverter data.
     """
 
-    def __init__(self, battery, device_instance: int = 0):
+    def __init__(self, inverter, device_instance: int = 0):
         """
         Initialize D-Bus helper.
 
         Sets up D-Bus paths and prepares for service initialization.
 
         Args:
-            battery: Battery instance (MPP Solar inverter) to monitor
+            inverter: Inverter instance (MPP Solar inverter) to monitor
             device_instance: Device instance number for uniqueness
         """
-        self.battery = battery  # Reference to the battery/inverter instance
+        self.inverter = inverter  # Reference to the inverter instance
         self.device_instance = device_instance  # Device instance for uniqueness
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
@@ -111,31 +111,31 @@ class DbusHelper:
         """
         try:
             # Update AC output parameters
-            if self.battery.ac_voltage is not None:
-                self.dbus_service['/Ac/Out/L1/V'] = self.battery.ac_voltage
+            if self.inverter.ac_voltage is not None:
+                self.dbus_service['/Ac/Out/L1/V'] = self.inverter.ac_voltage
 
-            if self.battery.ac_current is not None:
-                self.dbus_service['/Ac/Out/L1/I'] = self.battery.ac_current
+            if self.inverter.ac_current is not None:
+                self.dbus_service['/Ac/Out/L1/I'] = self.inverter.ac_current
 
-            if self.battery.ac_power is not None:
-                self.dbus_service['/Ac/Out/L1/P'] = self.battery.ac_power
+            if self.inverter.ac_power is not None:
+                self.dbus_service['/Ac/Out/L1/P'] = self.inverter.ac_power
 
-            if self.battery.frequency is not None:
-                self.dbus_service['/Ac/Out/L1/F'] = self.battery.frequency
+            if self.inverter.frequency is not None:
+                self.dbus_service['/Ac/Out/L1/F'] = self.inverter.frequency
 
             # Update DC input parameters (mapped from AC for compatibility)
-            if self.battery.voltage is not None:
-                self.dbus_service['/Dc/0/Voltage'] = self.battery.voltage
+            if self.inverter.voltage is not None:
+                self.dbus_service['/Dc/0/Voltage'] = self.inverter.voltage
 
-            if self.battery.current is not None:
-                self.dbus_service['/Dc/0/Current'] = self.battery.current
+            if self.inverter.current is not None:
+                self.dbus_service['/Dc/0/Current'] = self.inverter.current
 
-            if self.battery.power is not None:
-                self.dbus_service['/Dc/0/Power'] = self.battery.power
+            if self.inverter.power is not None:
+                self.dbus_service['/Dc/0/Power'] = self.inverter.power
 
             # Update connection and status flags
-            self.dbus_service['/Connected'] = 1 if self.battery.online else 0
-            self.dbus_service['/Status'] = 1 if self.battery.online else 0
+            self.dbus_service['/Connected'] = 1 if self.inverter.online else 0
+            self.dbus_service['/Status'] = 1 if self.inverter.online else 0
 
             return True
 

@@ -16,7 +16,7 @@ from typing import Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbus_mppsolar.utils import logger, get_config_value, safe_number_format, PORT, BAUD_RATE, POLL_INTERVAL
-from dbus_mppsolar.inverter import Battery
+from dbus_mppsolar.inverter import Inverter
 from dbus_mppsolar.dbushelper import DbusHelper
 
 try:
@@ -40,10 +40,10 @@ class MPPService:
         """
         Initialize the MPP Solar service.
 
-        Sets up instance variables for battery, D-Bus helper, main loop,
+        Sets up instance variables for inverter, D-Bus helper, main loop,
         and running state.
         """
-        self.battery: Optional[Battery] = None  # MPP Solar battery/inverter instance
+        self.inverter: Optional[Inverter] = None  # MPP Solar inverter instance
         self.dbus_helper: Optional[DbusHelper] = None  # D-Bus communication helper
         self.mainloop: Optional[gobject.MainLoop] = None  # GLib main event loop
         self.running = False  # Flag to track if service is running
@@ -52,7 +52,7 @@ class MPPService:
         """
         Setup the MPP Solar service.
 
-        Initializes the battery connection and D-Bus service.
+        Initializes the inverter connection and D-Bus service.
         Returns True if setup successful, False otherwise.
 
         Returns:
@@ -61,14 +61,14 @@ class MPPService:
         try:
             logger.info("Setting up MPP Solar D-Bus service...")
 
-            # Create and test battery connection
-            self.battery = Battery(port=PORT, baud=BAUD_RATE)
-            if not self.battery.test_connection():
+            # Create and test inverter connection
+            self.inverter = Inverter(port=PORT, baud=BAUD_RATE)
+            if not self.inverter.test_connection():
                 logger.error("Failed to connect to MPP Solar device")
                 return False
 
             # Get unique identifier for device instance assignment
-            unique_id = self.battery.unique_identifier()
+            unique_id = self.inverter.unique_identifier()
             logger.info(f"Device unique identifier: {unique_id}")
 
             # Get device instance from LocalSettings
@@ -76,7 +76,7 @@ class MPPService:
             logger.info(f"Assigned device instance: {device_instance}")
 
             # Initialize D-Bus helper for Venus OS integration
-            self.dbus_helper = DbusHelper(self.battery, device_instance)
+            self.dbus_helper = DbusHelper(self.inverter, device_instance)
             if not self.dbus_helper.setup_vedbus():
                 logger.error("Failed to setup D-Bus service")
                 return False
@@ -118,7 +118,7 @@ class MPPService:
             signal.signal(signal.SIGTERM, self._signal_handler)
             signal.signal(signal.SIGINT, self._signal_handler)
 
-            # Publish initial battery data to D-Bus
+            # Publish initial inverter data to D-Bus
             self.dbus_helper.publish_inverter()
 
             # Start the GLib main event loop
@@ -139,7 +139,7 @@ class MPPService:
 
     def _update_data(self) -> bool:
         """
-        Update battery data periodically.
+        Update inverter data periodically.
 
         Called by the GLib timer to refresh inverter data and publish
         to D-Bus. Returns True to continue the timer.
@@ -148,9 +148,9 @@ class MPPService:
             bool: Always True to keep the timer running
         """
         try:
-            if self.battery and self.dbus_helper:
+            if self.inverter and self.dbus_helper:
                 # Refresh data from the MPP Solar device
-                self.battery.refresh_data()
+                self.inverter.refresh_data()
 
                 # Publish updated data to D-Bus
                 self.dbus_helper.publish_inverter()

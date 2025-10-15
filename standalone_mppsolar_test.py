@@ -14,13 +14,13 @@ import time
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbus_mppsolar.utils import logger, get_config_value
-from dbus_mppsolar.inverter import Battery
+from dbus_mppsolar.inverter import Inverter
 
 def test_connection():
     """
     Test MPP Solar inverter connection.
 
-    Creates a Battery instance and attempts to establish connection
+    Creates a Inverter instance and attempts to establish connection
     with the MPP Solar inverter. Logs success or failure.
 
     Returns:
@@ -36,7 +36,7 @@ def test_connection():
     logger.info(f"Using port: {port}, baud: {baud_rate}, protocol: {protocol}")
 
     # Create inverter instance with config settings
-    inverter = Battery(port=port, baud=baud_rate)
+    inverter = Inverter(port=port, baud=baud_rate)
     if inverter.test_connection():
         logger.info("✓ Connection successful")
         return True
@@ -62,7 +62,7 @@ def test_data_refresh():
     protocol = get_config_value('PROTOCOL', default='PI30')
 
     # Create inverter instance with config settings and test connection first
-    inverter = Battery(port=port, baud=baud_rate)
+    inverter = Inverter(port=port, baud=baud_rate)
     if not inverter.test_connection():
         logger.error("Cannot test data refresh - connection failed")
         return False
