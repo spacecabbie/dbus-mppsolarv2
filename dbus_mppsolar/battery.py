@@ -17,7 +17,7 @@ from abc import ABC, abstractmethod
 try:
     from mppsolar import MPP
 except ImportError:
-    print("mpp-solar package not found. Please install with: pip install mpp-solar")
+    print("mpp-solar package not found. Please install with: pip install git+https://github.com/jblance/mpp-solar.git")
     MPP = None
 
 from .utils import logger
