@@ -17,8 +17,8 @@ from abc import ABC, abstractmethod
 try:
     import sys
     import os
-    # Add mpp-solar submodule to path
-    mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar')
+    # Add mpp-solar submodule to path (the package is inside mpp-solar/mppsolar/)
+    mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar', 'mppsolar')
     if mpp_solar_path not in sys.path:
         sys.path.insert(0, mpp_solar_path)
     from mppsolar import MPP
