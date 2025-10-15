@@ -13,12 +13,12 @@ import time
 # Add current directory to Python path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from dbus_mppsolar.utils import logger
+from dbus_mppsolar.utils import logger, get_config_value
 from dbus_mppsolar.battery import Battery
 
 def test_connection():
     """
-    Test MPP Solar device connection.
+    Test MPP Solar inverter connection.
 
     Creates a Battery instance and attempts to establish connection
     with the MPP Solar inverter. Logs success or failure.
@@ -26,11 +26,18 @@ def test_connection():
     Returns:
         bool: True if connection test passes, False otherwise
     """
-    logger.info("Testing MPP Solar device connection...")
+    logger.info("Testing MPP Solar inverter connection...")
 
-    # Create battery instance with default settings
-    battery = Battery()
-    if battery.test_connection():
+    # Read configuration from config file
+    port = get_config_value('PORT', default='/dev/ttyUSB0')
+    baud_rate = get_config_value('BAUD_RATE', default=2400)
+    protocol = get_config_value('PROTOCOL', default='PI30')
+
+    logger.info(f"Using port: {port}, baud: {baud_rate}, protocol: {protocol}")
+
+    # Create inverter instance with config settings
+    inverter = Battery(port=port, baud=baud_rate)
+    if inverter.test_connection():
         logger.info("✓ Connection successful")
         return True
     else:
@@ -41,7 +48,7 @@ def test_data_refresh():
     """
     Test data refresh functionality.
 
-    Tests the ability to refresh data from the connected MPP Solar device.
+    Tests the ability to refresh data from the connected MPP Solar inverter.
     Requires successful connection first. Logs retrieved data values.
 
     Returns:
@@ -49,24 +56,29 @@ def test_data_refresh():
     """
     logger.info("Testing data refresh...")
 
-    # Create battery instance and test connection first
-    battery = Battery()
-    if not battery.test_connection():
+    # Read configuration from config file
+    port = get_config_value('PORT', default='/dev/ttyUSB0')
+    baud_rate = get_config_value('BAUD_RATE', default=2400)
+    protocol = get_config_value('PROTOCOL', default='PI30')
+
+    # Create inverter instance with config settings and test connection first
+    inverter = Battery(port=port, baud=baud_rate)
+    if not inverter.test_connection():
         logger.error("Cannot test data refresh - connection failed")
         return False
 
-    # Refresh data from the device
-    battery.refresh_data()
+    # Refresh data from the inverter
+    inverter.refresh_data()
     logger.info("✓ Data refresh completed")
 
     # Log the retrieved data values for verification
-    logger.info(f"AC Voltage: {battery.ac_voltage}")
-    logger.info(f"AC Current: {battery.ac_current}")
-    logger.info(f"AC Power: {battery.ac_power}")
-    logger.info(f"Frequency: {battery.frequency}")
-    logger.info(f"DC Voltage: {battery.voltage}")
-    logger.info(f"DC Current: {battery.current}")
-    logger.info(f"DC Power: {battery.power}")
+    logger.info(f"AC Voltage: {inverter.ac_voltage}")
+    logger.info(f"AC Current: {inverter.ac_current}")
+    logger.info(f"AC Power: {inverter.ac_power}")
+    logger.info(f"Frequency: {inverter.frequency}")
+    logger.info(f"DC Voltage: {inverter.voltage}")
+    logger.info(f"DC Current: {inverter.current}")
+    logger.info(f"DC Power: {inverter.power}")
 
     return True
 

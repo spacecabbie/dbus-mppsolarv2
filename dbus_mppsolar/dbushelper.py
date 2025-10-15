@@ -15,11 +15,14 @@ from typing import Dict, Any
 # Add current directory to path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Add path to velib_python
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), "..", "ext", "velib_python"))
+
 from .utils import logger, DBUS_SERVICE_NAME, DBUS_PATH_BASE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE
 
 try:
     import dbus
-    import gobject
+    import gi.repository.GObject as gobject
     from vedbus import VeDbusService
 except ImportError as e:
     logger.error(f"D-Bus dependencies not available: {e}")
@@ -96,11 +99,11 @@ class DbusHelper:
             logger.error(f"Failed to setup D-Bus service: {e}")
             return False
 
-    def publish_battery(self) -> bool:
+    def publish_inverter(self) -> bool:
         """
-        Publish battery/inverter data to D-Bus.
+        Publish inverter data to D-Bus.
 
-        Updates all D-Bus paths with current data from the battery/inverter.
+        Updates all D-Bus paths with current data from the inverter.
         Only publishes non-None values to avoid overwriting with invalid data.
 
         Returns:
@@ -142,12 +145,12 @@ class DbusHelper:
 
     def publish_dbus(self) -> bool:
         """
-        Alias for publish_battery for compatibility.
+        Alias for publish_inverter for compatibility.
 
         Some parts of the codebase may call this method name.
-        Delegates to publish_battery().
+        Delegates to publish_inverter().
 
         Returns:
             bool: True if publishing successful, False otherwise
         """
-        return self.publish_battery()
+        return self.publish_inverter()

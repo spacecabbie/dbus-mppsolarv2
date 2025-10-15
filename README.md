@@ -551,7 +551,7 @@ dbus-mppsolarv2/
 - **`start-mppsolar.sh`** - Manual service startup script
 
 #### **Reserved Directories**
-- **`bms/`** - Empty directory reserved for future BMS (Battery Management System) driver implementations
+- **`bms/`** - Empty directory reserved for future BMS (Inverter Management System) driver implementations
 - **`ext/`** - Empty directory for external dependencies and libraries
 - **`qml/`** - Empty directory for QML user interface components (if GUI development is added)
 - **`rc/`** - Empty directory for runtime configuration scripts and hooks
@@ -621,7 +621,7 @@ classDiagram
         +_dbus_paths: Dict
         +__init__(battery)
         +setup_vedbus() bool
-        +publish_battery() bool
+        +publish_inverter() bool
         +publish_dbus() bool
     }
 
@@ -640,7 +640,7 @@ classDiagram
     DbusHelper --> Battery : monitors
 
     note for MPPService "Main service orchestrator\nManages service lifecycle"
-    note for Battery "MPP Solar device handler\nCommunicates with inverter"
+    note for Inverter "MPP Solar device handler\nCommunicates with inverter"
     note for DbusHelper "D-Bus interface manager\nPublishes data to Venus OS"
     note for Utils "Configuration & utilities\nLogging, config loading"
 ```
@@ -664,9 +664,9 @@ flowchart TD
     L --> M["Start main loop blocking call"]
 
     M --> N["_update_data timer fires"]
-    N --> O["battery.refresh_data()"]
+    N --> O["inverter.refresh_data()"]
     O --> P{"Data refresh successful?"}
-    P -->|"Yes"| Q["dbus_helper.publish_battery()"]
+    P -->|"Yes"| Q["dbus_helper.publish_inverter()"]
     P -->|"No"| R["Log error"]
     Q --> S["Return True continue timer"]
     R --> S
@@ -697,12 +697,12 @@ flowchart TD
 sequenceDiagram
     participant M as main()
     participant S as MPPService
-    participant B as Battery
+    participant B as Inverter
     participant D as DbusHelper
     participant DB as D-Bus
 
     M->>S: MPPService()
-    S->>B: Battery()
+    S->>B: Inverter()
     B->>B: _init_device()
     B->>B: test_connection()
     S->>D: DbusHelper(battery)

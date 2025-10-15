@@ -15,13 +15,13 @@ from typing import Optional
 # Add current directory to path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from dbus_mppsolar.utils import logger, get_config_value, safe_number_format
+from dbus_mppsolar.utils import logger, get_config_value, safe_number_format, PORT, BAUD_RATE, POLL_INTERVAL
 from dbus_mppsolar.battery import Battery
 from dbus_mppsolar.dbushelper import DbusHelper
 
 try:
     import dbus
-    import gobject
+    import gi.repository.GObject as gobject
     from dbus.mainloop.glib import DBusGMainLoop
 except ImportError as e:
     logger.error(f"D-Bus dependencies not available: {e}")
@@ -62,7 +62,7 @@ class MPPService:
             logger.info("Setting up MPP Solar D-Bus service...")
 
             # Create and test battery connection
-            self.battery = Battery()
+            self.battery = Battery(port=PORT, baud=BAUD_RATE)
             if not self.battery.test_connection():
                 logger.error("Failed to connect to MPP Solar device")
                 return False
@@ -101,36 +101,8 @@ class MPPService:
         Returns:
             int: Assigned device instance number
         """
-        try:
-            # Connect to system bus
-            bus = dbus.SystemBus()
-
-            # Get settings service
-            settings = bus.get_object('com.victronenergy.settings', '/')
-
-            # Calculate preferred instance based on port
-            # For serial ports: ttyUSBx -> 288 + x
-            port = self.battery.port
-            preferred_instance = 288  # default for ttyUSB0
-            if 'ttyUSB' in port:
-                try:
-                    x = int(port.split('ttyUSB')[1])
-                    preferred_instance = 288 + x
-                except (ValueError, IndexError):
-                    pass
-
-            # Add setting for this device
-            settings_path = f'/Settings/Devices/{unique_id}/ClassAndVrmInstance'
-            settings.AddSetting(settings_path, ('pvinverter', preferred_instance))
-
-            # Get the assigned instance
-            instance = settings.GetValue(settings_path)
-            return int(instance)
-
-        except Exception as e:
-            logger.warning(f"Failed to get device instance from LocalSettings: {e}")
-            # Fallback to default instance
-            return 0
+        # For now, use a fixed instance number to avoid LocalSettings complexity
+        return 0
 
     def run(self) -> None:
         """
@@ -147,14 +119,14 @@ class MPPService:
             signal.signal(signal.SIGINT, self._signal_handler)
 
             # Publish initial battery data to D-Bus
-            self.dbus_helper.publish_battery()
+            self.dbus_helper.publish_inverter()
 
             # Start the GLib main event loop
             logger.info("Starting MPP Solar D-Bus service main loop...")
             self.mainloop = gobject.MainLoop()
 
-            # Add timer for periodic data updates (every 1000ms = 1 second)
-            gobject.timeout_add(1000, self._update_data)
+            # Add timer for periodic data updates (every POLL_INTERVAL ms)
+            gobject.timeout_add(POLL_INTERVAL, self._update_data)
 
             # Run the main loop (blocks until quit)
             self.mainloop.run()
@@ -181,7 +153,7 @@ class MPPService:
                 self.battery.refresh_data()
 
                 # Publish updated data to D-Bus
-                self.dbus_helper.publish_battery()
+                self.dbus_helper.publish_inverter()
 
             return True  # Continue timer
 

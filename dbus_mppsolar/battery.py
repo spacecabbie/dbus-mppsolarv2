@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MPP Solar Battery Implementation for Venus OS
+MPP Solar Inverter Implementation for Venus OS
 Based on dbus-serialbattery battery.py
 Adapted to use mpp-solar package for PI30 inverters
 
@@ -16,41 +16,26 @@ from abc import ABC, abstractmethod
 # Import mpp-solar package for inverter communication
 import sys
 import os
-import importlib.util
 
 # Should we import and call manually, to use our version
 USE_SYSTEM_MPPSOLAR = False
 
-def load_mppsolar_helpers():
-    """Load mppsolar.helpers module directly to avoid __init__.py imports"""
-    if USE_SYSTEM_MPPSOLAR:
-        try:
-            # Try system installation first
-            import mppsolar.helpers as helpers
-            return helpers
-        except ImportError:
-            pass
+if USE_SYSTEM_MPPSOLAR:
+    try:
+        import mppsolar
+    except:
+        USE_SYSTEM_MPPSOLAR = False
 
-    # Load from submodule
+if not USE_SYSTEM_MPPSOLAR:
+    # Add the mpp-solar submodule to path
     mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar')
     if mpp_solar_path not in sys.path:
         sys.path.insert(1, mpp_solar_path)
+    import mppsolar
 
-    helpers_path = os.path.join(mpp_solar_path, 'mppsolar', 'helpers.py')
-
-    if os.path.exists(helpers_path):
-        spec = importlib.util.spec_from_file_location("mppsolar.helpers", helpers_path)
-        helpers = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(helpers)
-        return helpers
-    else:
-        raise ImportError("mpp-solar helpers module not found")
-
-# Load the helpers module
+# Get the device class
 try:
-    helpers = load_mppsolar_helpers()
-    get_device_class = helpers.get_device_class
-    MPP = get_device_class("mppsolar")
+    MPP = mppsolar.helpers.get_device_class("mppsolar")
     if MPP is None:
         raise ImportError("Could not load mppsolar device class")
 except ImportError as e:
@@ -62,7 +47,7 @@ from .utils import logger
 
 class Battery(ABC):
     """
-    MPP Solar Battery implementation for Venus OS D-Bus service.
+    MPP Solar Inverter implementation for Venus OS D-Bus service.
 
     This class handles communication with MPP Solar inverters using the
     mpp-solar Python package. It adapts the interface to work with Venus OS
@@ -71,7 +56,7 @@ class Battery(ABC):
 
     def __init__(self, port: str = None, baud: int = 2400, address: str = None):
         """
-        Initialize MPP Solar battery instance.
+        Initialize MPP Solar inverter instance.
 
         Sets up connection parameters and initializes the MPP Solar device.
 
@@ -95,12 +80,12 @@ class Battery(ABC):
         # Device identification
         self.serial_number = None  # Device serial number for uniqueness
 
-        # Basic battery parameters (adapted for inverter)
-        self.voltage = None  # DC voltage (not directly applicable to inverters)
-        self.current = None  # DC current
-        self.power = None  # DC power
+        # Basic inverter parameters (adapted for battery interface compatibility)
+        self.voltage = None  # DC voltage (mapped from AC output)
+        self.current = None  # DC current (mapped from AC output)
+        self.power = None  # DC power (mapped from AC output)
         self.soc = None  # State of charge (not applicable to inverters)
-        self.capacity = None  # Battery capacity (placeholder)
+        self.capacity = None  # Inverter capacity (placeholder)
 
         # Inverter-specific parameters
         self.ac_voltage = None  # AC output voltage
@@ -117,7 +102,7 @@ class Battery(ABC):
 
     def _init_device(self):
         """
-        Initialize MPP Solar device connection.
+        Initialize MPP Solar inverter connection.
 
         Creates an MPP instance with the configured parameters.
         Logs success or failure of initialization.
@@ -127,8 +112,8 @@ class Battery(ABC):
             return
 
         try:
-            # Create MPP Solar device instance
-            self.mpp_device = MPP(device=self.port,
+            # Create MPP Solar device instance (matching DarkZeros approach)
+            self.mpp_device = MPP(port=self.port,
                                 baud=self.baud_rate,
                                 protocol=self.protocol)
             logger.info(f"MPP Solar device initialized on {self.port}")
@@ -138,7 +123,7 @@ class Battery(ABC):
 
     def test_connection(self) -> bool:
         """
-        Test connection to MPP Solar device.
+        Test connection to MPP Solar inverter.
 
         Attempts to get device info to verify connection.
         Updates online status and connection info accordingly.
@@ -150,9 +135,9 @@ class Battery(ABC):
             return False
 
         try:
-            # Query device for basic information using QPI command
+            # Query device for basic information using QPI command (matching DarkZeros)
             result = self.mpp_device.run_command("QPI")
-            if result and not isinstance(result, dict) or "ERROR" not in result:
+            if result and "ERROR" not in str(result):
                 self.online = True
                 self.connection_info = f"Connected to {self.port}"
                 # Store serial number if available
@@ -172,9 +157,9 @@ class Battery(ABC):
 
     def refresh_data(self) -> bool:
         """
-        Refresh data from MPP Solar device.
+        Refresh data from MPP Solar inverter.
 
-        Queries the device for current status and parses the response.
+        Queries the inverter for current status and parses the response.
         Updates all data attributes with fresh values.
 
         Returns:
@@ -185,14 +170,14 @@ class Battery(ABC):
 
         try:
             # Get general status from the inverter using QPIGS command
-            status = self.mpp_device.run_command("QPIGS")
+            result = self.mpp_device.run_command("QPIGS")
 
-            if status and not isinstance(status, dict) or "ERROR" not in status:
-                # Parse and update data from status response
-                self._parse_status_data(status)
+            if result and "ERROR" not in str(result):
+                # run_command already returns parsed data, no need for to_json
+                self._parse_status_data(result)
                 return True
             else:
-                logger.warning("Failed to get status from MPP Solar device")
+                logger.warning("Failed to get status from MPP Solar inverter")
                 return False
 
         except Exception as e:
@@ -202,17 +187,17 @@ class Battery(ABC):
 
     def _parse_status_data(self, status_data):
         """
-        Parse status data from MPP Solar device.
+        Parse status data from MPP Solar inverter.
 
-        Extracts relevant parameters from the device response and updates
+        Extracts relevant parameters from the inverter response and updates
         instance variables. Handles data conversion and validation.
 
         Args:
-            status_data: Raw status data from MPP Solar device
+            status_data: Parsed status data from MPP Solar inverter (dict with list values)
         """
         try:
             # Extract AC parameters from status data
-            # Note: QPIGS returns a dictionary with descriptive keys
+            # Data format: {'AC Output Voltage': [228.0, 'V', {'icon': 'mdi:lightning'}]}
             if 'AC Output Voltage' in status_data:
                 self.ac_voltage = float(status_data['AC Output Voltage'][0])
 
@@ -223,7 +208,7 @@ class Battery(ABC):
                 self.ac_power = float(status_data['AC Output Active Power'][0])
 
             # Calculate AC current from power and voltage if available
-            if self.ac_power and self.ac_voltage:
+            if self.ac_power and self.ac_voltage and self.ac_voltage > 0:
                 self.ac_current = self.ac_power / self.ac_voltage
 
             # For inverters, DC values are mapped from AC for compatibility

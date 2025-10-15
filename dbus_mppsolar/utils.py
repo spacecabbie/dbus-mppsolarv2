@@ -8,29 +8,21 @@ This code was generated with the help of Grok XAI
 
 import logging
 import configparser
-import os
+from pathlib import Path
 from typing import Any, Union
 
-# Setup logging configuration
-# Configure basic logging with timestamp, logger name, level, and message
+# Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)  # Get logger instance for this module
+logger = logging.getLogger("MPP-Solar")
 
-# Configuration management
-# Initialize ConfigParser for handling INI-style configuration files
+PATH_CONFIG_DEFAULT = "config.default.ini"
+PATH_CONFIG_USER = "config.ini"
+
 config = configparser.ConfigParser()
-
-# Define configuration file paths
-config_file = os.path.join(os.path.dirname(__file__), 'config.ini')  # User configuration file
-default_config_file = os.path.join(os.path.dirname(__file__), 'config.default.ini')  # Default configuration file
-
-# Load default configuration first (provides fallback values)
-if os.path.exists(default_config_file):
-    config.read(default_config_file)
-
-# Load user configuration if it exists (overrides defaults)
-if os.path.exists(config_file):
-    config.read(config_file)
+path = Path(__file__).parents[0]
+default_config_file_path = path.joinpath(PATH_CONFIG_DEFAULT).absolute().__str__()
+custom_config_file_path = path.joinpath(PATH_CONFIG_USER).absolute().__str__()
+config.read([default_config_file_path, custom_config_file_path])
 
 def get_config_value(key: str, section: str = 'MPPSOLAR', default: Any = None) -> Any:
     """
@@ -93,21 +85,64 @@ def safe_number_format(value: Union[float, None], format_string: str = '{:.2f}')
     except (ValueError, TypeError):
         return str(value)
 
-# MPP Solar specific constants
+# MPP Solar specific constants - read from config
 # Default values for MPP Solar device communication
-DEFAULT_PORT = '/dev/ttyUSB0'  # Default serial port for USB connection
-DEFAULT_BAUD_RATE = 2400      # Default baud rate for PI30 protocol
-DEFAULT_PROTOCOL = 'PI30'     # MPP Solar protocol version
-DEFAULT_TIMEOUT = 5           # Default connection timeout in seconds
-DEFAULT_POLL_INTERVAL = 1000  # Default polling interval in milliseconds
+PORT = get_config_value('PORT', default='/dev/ttyUSB0')
+BAUD_RATE = int(get_config_value('BAUD_RATE', default=2400))
+PROTOCOL = get_config_value('PROTOCOL', default='PI30')
+TIMEOUT = int(get_config_value('TIMEOUT', default=5))
+POLL_INTERVAL = int(get_config_value('POLL_INTERVAL', default=1000))
 
 # D-Bus constants
 # D-Bus service identification for Venus OS integration
-DBUS_SERVICE_NAME = 'com.victronenergy.inverter'  # D-Bus service name
-DBUS_PATH_BASE = '/Inverter/0'                    # Base path for D-Bus objects
+DBUS_SERVICE_NAME = get_config_value('SERVICE_NAME', 'DBUS', 'com.victronenergy.inverter')
+DEVICE_INSTANCE = int(get_config_value('DEVICE_INSTANCE', 'DBUS', 0))
 
 # Venus OS constants
 # Product identification for Venus OS device recognition
-PRODUCT_NAME = 'MPP Solar Inverter'  # Human-readable product name
-PRODUCT_ID = 0xBFFF                  # Unique product identifier (hex)
-DEVICE_TYPE = 0xFFFF                 # Device type identifier
+PRODUCT_NAME = get_config_value('PRODUCT_NAME', 'VENUS', 'MPP Solar Inverter')
+PRODUCT_ID = int(get_config_value('PRODUCT_ID', 'VENUS', '0xBFFF'), 16)
+DEVICE_TYPE = int(get_config_value('DEVICE_TYPE', 'VENUS', '0xFFFF'), 16)
+
+# Legacy constants for backward compatibility
+DEFAULT_PORT = PORT
+DEFAULT_BAUD_RATE = BAUD_RATE
+DEFAULT_PROTOCOL = PROTOCOL
+DEFAULT_TIMEOUT = TIMEOUT
+DEFAULT_POLL_INTERVAL = POLL_INTERVAL
+
+# D-Bus path base
+DBUS_PATH_BASE = f'/Inverter/{DEVICE_INSTANCE}'
+
+
+# Publish config variables to dbus
+def publish_config_variables(dbusservice):
+    """
+    Publish configuration variables to D-Bus.
+
+    Adds all configuration constants to D-Bus paths under /Info/Config/
+    for monitoring and debugging purposes.
+
+    Args:
+        dbusservice: D-Bus service instance to publish to
+    """
+    config_vars = {
+        'PORT': PORT,
+        'BAUD_RATE': BAUD_RATE,
+        'PROTOCOL': PROTOCOL,
+        'TIMEOUT': TIMEOUT,
+        'POLL_INTERVAL': POLL_INTERVAL,
+        'DBUS_SERVICE_NAME': DBUS_SERVICE_NAME,
+        'DEVICE_INSTANCE': DEVICE_INSTANCE,
+        'PRODUCT_NAME': PRODUCT_NAME,
+        'PRODUCT_ID': PRODUCT_ID,
+        'DEVICE_TYPE': DEVICE_TYPE,
+    }
+
+    for variable, value in config_vars.items():
+        if (
+            isinstance(value, float)
+            or isinstance(value, int)
+            or isinstance(value, str)
+        ):
+            dbusservice.add_path(f"/Info/Config/{variable}", value)
