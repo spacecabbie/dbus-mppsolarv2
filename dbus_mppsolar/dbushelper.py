@@ -75,12 +75,12 @@ class DbusHelper:
             '/DeviceInstance': {'value': self.device_instance, 'text': 'Device Instance'}, # Device instance ID
             '/ProductId': {'value': PRODUCT_ID, 'text': 'Product ID'},   # Product identifier
             '/ProductName': {'value': PRODUCT_NAME, 'text': 'Product Name'}, # Product name
-            '/FirmwareVersion': {'value': '1.0.0', 'text': 'Firmware Version'}, # Firmware version
+            '/FirmwareVersion': {'value': '0.0.1-alpha', 'text': 'Firmware Version'}, # Firmware version
             '/Connected': {'value': 0, 'text': 'Connected'},  # Connection status (0/1)
             '/Status': {'value': 0, 'text': 'Status'},        # Service status (0=Offline, 1=Running)
             '/State': {'value': 0, 'text': 'Inverter State'}, # Inverter operational state (0=Off, 9=Inverting)
             '/Mgmt/ProcessName': {'value': 'dbus-mppsolar', 'text': 'Process Name'},  # Process name for management
-            '/Mgmt/ProcessVersion': {'value': '1.0.0', 'text': 'Process Version'},    # Process version
+            '/Mgmt/ProcessVersion': {'value': '0.0.1-alpha', 'text': 'Process Version'},    # Process version
             '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
         }
 
