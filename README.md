@@ -111,6 +111,7 @@ The service publishes the following D-Bus paths:
 - `/FirmwareVersion` - Firmware version
 - `/Connected` - Connection status (0/1)
 - `/Status` - Service status (0=Offline, 1=Running)
+- `/State` - Inverter operational state (0=Off, 9=Inverting)
 
 ### Management Paths
 - `/Mgmt/ProcessName` - Process name (default: "dbus-mppsolar")
@@ -231,6 +232,7 @@ dbus -y com.victronenergy.inverter_0 /DeviceInstance GetValue
 # Check specific paths
 dbus -y com.victronenergy.inverter_0 /Ac/Out/L1/V GetValue
 dbus -y com.victronenergy.inverter_0 /Connected GetValue
+dbus -y com.victronenergy.inverter_0 /State GetValue
 dbus -y com.victronenergy.inverter_0 /ProductName GetValue
 ```
 

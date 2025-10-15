@@ -84,6 +84,7 @@ class DbusHelper:
             '/FirmwareVersion': {'value': '1.0.0', 'text': 'Firmware Version'}, # Firmware version
             '/Connected': {'value': 0, 'text': 'Connected'},  # Connection status (0/1)
             '/Status': {'value': 0, 'text': 'Status'},        # Service status (0=Offline, 1=Running)
+            '/State': {'value': 0, 'text': 'Inverter State'}, # Inverter operational state (0=Off, 9=Inverting)
             '/Mgmt/ProcessName': {'value': 'dbus-mppsolar', 'text': 'Process Name'},  # Process name for management
             '/Mgmt/ProcessVersion': {'value': '1.0.0', 'text': 'Process Version'},    # Process version
             '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
@@ -232,6 +233,8 @@ class DbusHelper:
             # Update connection and status flags
             self.dbus_service['/Connected'] = 1 if self.inverter.online else 0
             self.dbus_service['/Status'] = 1 if self.inverter.online else 0
+            # Set inverter state: 9=Inverting (normal operation), 0=Off
+            self.dbus_service['/State'] = 9 if self.inverter.online else 0
 
             return True
 
