@@ -177,8 +177,8 @@ ssh root@venus-device-ip
 1. **Clone the repository on your Venus OS device:**
    ```bash
    ssh root@venus-device
-   mkdir -p /data/etc
-   cd /data/etc
+   mkdir -p /data/apps
+   cd /data/apps
    git clone https://github.com/spacecabbie/dbus-mppsolarv2.git dbus-mppsolarv2
    cd dbus-mppsolarv2
    ```
@@ -203,8 +203,8 @@ ssh root@venus-device-ip
 1. **Download and extract on Venus OS:**
    ```bash
    ssh root@venus-device
-   mkdir -p /data/etc
-   cd /data/etc
+   mkdir -p /data/apps
+   cd /data/apps
    wget https://github.com/spacecabbie/dbus-mppsolarv2/archive/master.zip
    unzip master.zip
    mv dbus-mppsolarv2-master dbus-mppsolarv2
@@ -226,13 +226,13 @@ ssh root@venus-device-ip
 1. **Transfer the service files to Venus OS:**
    ```bash
    # From your local machine (if you have the files locally)
-   scp -r dbus-mppsolar root@venus-device:/data/etc/dbus-mppsolarv2
+   scp -r dbus-mppsolar root@venus-device:/data/apps/dbus-mppsolarv2
    ```
 
 2. **Connect to Venus OS and initialize submodule:**
    ```bash
    ssh root@venus-device
-   cd /data/etc/dbus-mppsolarv2
+   cd /data/apps/dbus-mppsolarv2
    git submodule update --init --recursive
    ```
 
@@ -243,7 +243,7 @@ ssh root@venus-device-ip
 
 ### Configuration
 
-Edit `/data/etc/dbus-mppsolarv2/config.ini`:
+Edit `/data/apps/dbus-mppsolarv2/dbus_mppsolar/config.ini`:
 
 ```ini
 [MPPSOLAR]
@@ -266,7 +266,7 @@ dmesg | grep tty  # Check recent serial device connections
 Test the MPP Solar device connection independently:
 
 ```bash
-cd /data/etc/dbus-mppsolarv2
+cd /data/apps/dbus-mppsolarv2
 python3 standalone_mppsolar_test.py
 ```
 
@@ -422,10 +422,10 @@ top -p $(pgrep -f dbus-mppsolar)
 
 ```bash
 # Backup configuration
-cp /data/etc/dbus-mppsolarv2/config.ini /data/etc/dbus-mppsolarv2/config.ini.backup
+cp /data/apps/dbus-mppsolarv2/dbus_mppsolar/config.ini /data/apps/dbus-mppsolarv2/dbus_mppsolar/config.ini.backup
 
 # Full service backup
-tar -czf dbus-mppsolarv2-backup.tar.gz /data/etc/dbus-mppsolarv2/
+tar -czf dbus-mppsolarv2-backup.tar.gz /data/apps/dbus-mppsolarv2/
 
 # Restore from backup
 tar -xzf dbus-mppsolarv2-backup.tar.gz -C /
@@ -441,7 +441,7 @@ systemctl restart com.victronenergy.mppsolar.service
 systemctl stop com.victronenergy.mppsolar.service
 
 # Update from repository
-cd /data/etc/dbus-mppsolarv2
+cd /data/apps/dbus-mppsolarv2
 git pull origin master
 git submodule update --init --recursive
 
@@ -456,7 +456,7 @@ systemctl start com.victronenergy.mppsolar.service
 systemctl stop com.victronenergy.mppsolar.service
 
 # Backup current version
-mv /data/etc/dbus-mppsolarv2 /data/etc/dbus-mppsolarv2.old
+mv /data/apps/dbus-mppsolarv2 /data/apps/dbus-mppsolarv2.old
 
 # Install new version
 # (transfer and install as described above)
@@ -465,7 +465,7 @@ mv /data/etc/dbus-mppsolarv2 /data/etc/dbus-mppsolarv2.old
 git submodule update --init --recursive
 
 # Restore configuration
-cp /data/etc/dbus-mppsolarv2.old/config.ini /data/etc/dbus-mppsolarv2/
+cp /data/apps/dbus-mppsolarv2.old/dbus_mppsolar/config.ini /data/apps/dbus-mppsolarv2/dbus_mppsolar/
 
 # Start service
 systemctl start com.victronenergy.mppsolar.service
