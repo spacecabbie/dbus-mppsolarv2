@@ -21,7 +21,11 @@ try:
     mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar', 'mppsolar')
     if mpp_solar_path not in sys.path:
         sys.path.insert(0, mpp_solar_path)
-    from mppsolar import MPP
+    from mppsolar.helpers import get_device_class
+    # Get the mppsolar device class
+    MPP = get_device_class("mppsolar")
+    if MPP is None:
+        raise ImportError("Could not load mppsolar device class")
 except ImportError:
     print("mpp-solar submodule not found. Please run: git submodule update --init --recursive")
     MPP = None
@@ -118,16 +122,14 @@ class Battery(ABC):
             return False
 
         try:
-            # Query device for basic information
-            result = self.mpp_device.get_device_info()
-            if result:
+            # Query device for basic information using QPI command
+            result = self.mpp_device.run_command("QPI")
+            if result and not isinstance(result, dict) or "ERROR" not in result:
                 self.online = True
                 self.connection_info = f"Connected to {self.port}"
                 # Store serial number if available
-                if isinstance(result, dict) and 'serial' in result:
-                    self.serial_number = result['serial']
-                elif isinstance(result, dict) and 'serial_number' in result:
-                    self.serial_number = result['serial_number']
+                if isinstance(result, dict) and 'Protocol ID' in result:
+                    self.serial_number = result.get('Protocol ID', [None])[0]
                 logger.info("MPP Solar device connection successful")
                 return True
             else:
@@ -154,10 +156,10 @@ class Battery(ABC):
             return False
 
         try:
-            # Get general status from the inverter
-            status = self.mpp_device.get_general_status()
+            # Get general status from the inverter using QPIGS command
+            status = self.mpp_device.run_command("QPIGS")
 
-            if status:
+            if status and not isinstance(status, dict) or "ERROR" not in status:
                 # Parse and update data from status response
                 self._parse_status_data(status)
                 return True
@@ -182,27 +184,32 @@ class Battery(ABC):
         """
         try:
             # Extract AC parameters from status data
-            # Note: Field names depend on specific MPP Solar protocol
-            if 'ac_voltage' in status_data:
-                self.ac_voltage = float(status_data['ac_voltage'])
+            # Note: QPIGS returns a dictionary with descriptive keys
+            if 'AC Output Voltage' in status_data:
+                self.ac_voltage = float(status_data['AC Output Voltage'][0])
 
-            if 'ac_current' in status_data:
-                self.ac_current = float(status_data['ac_current'])
+            if 'AC Output Frequency' in status_data:
+                self.frequency = float(status_data['AC Output Frequency'][0])
 
-            if 'ac_power' in status_data:
-                self.ac_power = float(status_data['ac_power'])
+            if 'AC Output Active Power' in status_data:
+                self.ac_power = float(status_data['AC Output Active Power'][0])
 
-            if 'frequency' in status_data:
-                self.frequency = float(status_data['frequency'])
+            # Calculate AC current from power and voltage if available
+            if self.ac_power and self.ac_voltage:
+                self.ac_current = self.ac_power / self.ac_voltage
 
-            # Calculate derived DC values for D-Bus compatibility
-            # Inverters don't have traditional batteries, so we map AC to DC
-            if self.ac_voltage and self.ac_current:
-                self.power = self.ac_voltage * self.ac_current
+            # For inverters, DC values are mapped from AC for compatibility
+            # Inverters don't have traditional batteries, so we use AC values
+            if self.ac_voltage:
+                self.voltage = self.ac_voltage  # DC voltage equivalent
+
+            if self.ac_current:
+                self.current = self.ac_current  # DC current equivalent
+
+            if self.ac_power:
+                self.power = self.ac_power  # DC power equivalent
 
             # Set basic battery values (placeholders for D-Bus compatibility)
-            self.voltage = self.ac_voltage or 230.0  # Default AC voltage
-            self.current = self.ac_current or 0.0  # AC current as DC equivalent
             self.soc = 100  # Inverters always show 100% "charge"
             self.capacity = 10000  # Placeholder capacity in Wh
 
