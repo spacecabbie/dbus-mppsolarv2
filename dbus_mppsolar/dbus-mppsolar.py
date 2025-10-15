@@ -16,7 +16,7 @@ import gi.repository.GObject as gobject
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbushelper import DbusHelper
-from inverter import Battery
+from inverter import Inverter
 from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL, publish_config_variables
 
 def poll_inverter(dbus_helper):
@@ -49,13 +49,13 @@ def main():
     # Initialize D-Bus main loop
     DBusGMainLoop(set_as_default=True)
 
-    # Create battery instance with config settings
-    logger.info(f"Creating Battery instance with port={PORT}, baud={BAUD_RATE}")
-    battery = Battery(port=PORT, baud=BAUD_RATE)
-    logger.info(f"Battery created with port: {battery.port}")
+    # Create inverter instance with config settings
+    logger.info(f"Creating Inverter instance with port={PORT}, baud={BAUD_RATE}")
+    inverter = Inverter(port=PORT, baud=BAUD_RATE)
+    logger.info(f"Inverter created with port: {inverter.port}")
 
     # Create D-Bus helper
-    dbus_helper = DbusHelper(battery)
+    dbus_helper = DbusHelper(inverter)
 
     # Setup D-Bus service
     if not dbus_helper.setup_vedbus():

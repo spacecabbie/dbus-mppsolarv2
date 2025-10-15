@@ -48,7 +48,7 @@ Keep this doc short and actionable. When making changes, reference these canonic
 - Installer and service: `install.sh`, `service/com.victronenergy.mppsolar.service`, `start-mppsolar.sh`
 
 Essential context and patterns
-- Architecture: a small orchestrator (main -> MPPService) creates a `Battery` instance (wraps the `mpp-solar` device) and a `DbusHelper` that maps device fields to Venus OS D-Bus paths. The main loop uses GLib timers (~1s) to call `inverter.refresh_data()` and then `dbus_helper.publish_inverter()`.
+- Architecture: a small orchestrator (main -> MPPService) creates an `Inverter` instance (wraps the `mpp-solar` device) and a `DbusHelper` that maps device fields to Venus OS D-Bus paths. The main loop uses GLib timers (~1s) to call `inverter.refresh_data()` and then `dbus_helper.publish_inverter()`.
 - Error handling: device communication is unstable by design; prefer conservative retries and clear logging. Check `inverter.test_connection()` and `inverter.refresh_data()` semantics when modifying polling or timeouts.
 - Configuration: runtime settings live in `dbus_mppsolar/config.ini` (from `config.default.ini`). Prefer reading config via `utils.get_config_value()` to keep behaviour consistent.
 - Naming & mapping: D-Bus paths use Venus OS conventions (e.g. `/Ac/Out/L1/V`, `/Dc/0/Voltage`, `/Connected`). When adding new metrics, mirror existing naming in `dbushelper.py` to avoid GUI/VRM breakage.

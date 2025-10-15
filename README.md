@@ -226,7 +226,7 @@ dbus-mppsolarv2/
 - **`mpp-solar/`** - Git submodule containing the MPP Solar communication library for inverter protocol handling
 
 #### **Core Service Directory (`dbus-mppsolar/`)**
-- **`inverter.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
+- **`inverter.py`** - Implements the Inverter class that handles MPP Solar inverter communication using the mpp-solar package
 - **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
 - **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
 - **`config.default.ini`** - Template configuration file with default settings for port, baud rate, protocol, and timeouts
@@ -274,7 +274,7 @@ MIT License - see LICENSE file for details
 ```mermaid
 classDiagram
     class MPPService {
-        +battery: Battery
+        +inverter: Inverter
         +dbus_helper: DbusHelper
         +mainloop: MainLoop
         +running: bool
@@ -285,7 +285,7 @@ classDiagram
         -_signal_handler(signum, frame) void
     }
 
-    class Battery {
+    class Inverter {
         +port: str
         +baud_rate: int
         +protocol: str
@@ -314,7 +314,7 @@ classDiagram
     }
 
     class DbusHelper {
-        +battery: Battery
+        +inverter: Inverter
         +dbus_service: VeDbusService
         +_paths: Dict
         +_dbus_paths: Dict
@@ -332,11 +332,11 @@ classDiagram
         +safe_number_format(value, format) str
     }
 
-    MPPService --> Battery : creates
+    MPPService --> Inverter : creates
     MPPService --> DbusHelper : creates
-    Battery --> Utils : uses
+    Inverter --> Utils : uses
     DbusHelper --> Utils : uses
-    DbusHelper --> Battery : monitors
+    DbusHelper --> Inverter : monitors
 
     note for MPPService "Main service orchestrator\nManages service lifecycle"
     note for Inverter "MPP Solar device handler\nCommunicates with inverter"
