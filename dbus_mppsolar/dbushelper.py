@@ -154,3 +154,60 @@ class DbusHelper:
             bool: True if publishing successful, False otherwise
         """
         return self.publish_inverter()
+
+    def update_process_name(self, name: str) -> bool:
+        """
+        Update the process name in D-Bus.
+
+        Args:
+            name: New process name to set
+
+        Returns:
+            bool: True if update successful, False otherwise
+        """
+        try:
+            self.dbus_service['/Mgmt/ProcessName'] = name
+            self._dbus_paths['/Mgmt/ProcessName']['value'] = name
+            logger.debug(f"Updated process name to: {name}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating process name: {e}")
+            return False
+
+    def update_process_version(self, version: str) -> bool:
+        """
+        Update the process version in D-Bus.
+
+        Args:
+            version: New process version to set
+
+        Returns:
+            bool: True if update successful, False otherwise
+        """
+        try:
+            self.dbus_service['/Mgmt/ProcessVersion'] = version
+            self._dbus_paths['/Mgmt/ProcessVersion']['value'] = version
+            logger.debug(f"Updated process version to: {version}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating process version: {e}")
+            return False
+
+    def update_connection_type(self, connection: str) -> bool:
+        """
+        Update the connection type in D-Bus.
+
+        Args:
+            connection: New connection type to set (e.g., 'Serial USB', 'USB HID', 'Bluetooth')
+
+        Returns:
+            bool: True if update successful, False otherwise
+        """
+        try:
+            self.dbus_service['/Mgmt/Connection'] = connection
+            self._dbus_paths['/Mgmt/Connection']['value'] = connection
+            logger.debug(f"Updated connection type to: {connection}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating connection type: {e}")
+            return False

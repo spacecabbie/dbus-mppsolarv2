@@ -62,6 +62,26 @@ def main():
         logger.error("Failed to setup D-Bus service")
         return 1
 
+    # Update management information
+    # Set process name to the actual service name
+    dbus_helper.update_process_name("dbus-mppsolar")
+
+    # Set process version (could be read from a version file in the future)
+    dbus_helper.update_process_version("1.0.0")
+
+    # Determine connection type based on port
+    if PORT.startswith('/dev/hidraw'):
+        connection_type = "USB HID"
+    elif PORT.startswith('/dev/tty'):
+        connection_type = "Serial USB"
+    elif PORT.startswith('/dev/ttyUSB'):
+        connection_type = "Serial USB"
+    elif PORT.startswith('/dev/ttyACM'):
+        connection_type = "Serial ACM"
+    else:
+        connection_type = "Unknown"
+    dbus_helper.update_connection_type(connection_type)
+
     # Publish config variables to D-Bus
     publish_config_variables(dbus_helper.dbus_service)
 

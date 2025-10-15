@@ -95,6 +95,7 @@ For direct communication with your MPP Solar inverter (useful for testing and de
 
 The service publishes the following D-Bus paths:
 
+### Inverter Data Paths
 - `/Ac/Out/L1/V` - AC output voltage
 - `/Ac/Out/L1/I` - AC output current
 - `/Ac/Out/L1/P` - AC output power
@@ -102,15 +103,19 @@ The service publishes the following D-Bus paths:
 - `/Dc/0/Voltage` - DC input voltage
 - `/Dc/0/Current` - DC input current
 - `/Dc/0/Power` - DC input power
+
+### Device Information Paths
 - `/DeviceInstance` - Device instance ID (dynamically assigned)
 - `/ProductId` - Product ID
 - `/ProductName` - Product name
 - `/FirmwareVersion` - Firmware version
 - `/Connected` - Connection status (0/1)
 - `/Status` - Service status (0=Offline, 1=Running)
-- `/Mgmt/ProcessName` - Process name (dbus-mppsolar)
-- `/Mgmt/ProcessVersion` - Process version (1.0.0)
-- `/Mgmt/Connection` - Connection type (Serial USB)
+
+### Management Paths
+- `/Mgmt/ProcessName` - Process name (default: "dbus-mppsolar")
+- `/Mgmt/ProcessVersion` - Process version (default: "1.0.0")
+- `/Mgmt/Connection` - Connection type (auto-detected: "USB HID", "Serial USB", "Serial ACM", etc.)
 
 ## Troubleshooting
 
