@@ -57,7 +57,7 @@ class DbusHelper:
             self.device_instance = device_instance
 
         # Construct the full service name with instance
-        self.service_name = f"{DBUS_SERVICE_NAME}_{self.device_instance}"
+        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
 
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
@@ -66,7 +66,7 @@ class DbusHelper:
         self._ensure_unique_device_instance()
 
         # Update service name with final instance
-        self.service_name = f"{DBUS_SERVICE_NAME}_{self.device_instance}"
+        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
 
         # Define D-Bus paths for inverter data
         # These paths follow Venus OS D-Bus API conventions
@@ -103,7 +103,7 @@ class DbusHelper:
             bus = dbus.SystemBus()
 
             # Check if our desired service name is already registered
-            service_name = f"{DBUS_SERVICE_NAME}_{self.device_instance}"
+            service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
 
             # Try to find an available instance
             instance = self.device_instance
