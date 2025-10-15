@@ -74,30 +74,71 @@ class DbusHelper:
             '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
         }
 
-    def setup_vedbus(self) -> bool:
+    def setup_vedbus(self, publish_config: bool = True) -> bool:
         """
         Setup D-Bus service.
 
         Creates and initializes the VeDbusService with all required paths.
         This method must be called before publishing data.
 
+        Args:
+            publish_config: Whether to publish configuration variables to D-Bus
+
         Returns:
             bool: True if setup successful, False otherwise
         """
         try:
-            # Create the D-Bus service with the configured service name
-            self.dbus_service = VeDbusService(DBUS_SERVICE_NAME)
+            # Create the D-Bus service with register=False (don't register yet)
+            self.dbus_service = VeDbusService(DBUS_SERVICE_NAME, register=False)
 
             # Add all defined D-Bus paths to the service
             for path, info in self._dbus_paths.items():
                 self.dbus_service.add_path(path, info['value'], description=info['text'])
 
-            logger.info(f"D-Bus service {DBUS_SERVICE_NAME} initialized")
+            # Publish config variables if requested
+            if publish_config:
+                self._publish_config_variables()
+
+            # Now register the service after all paths are added
+            self.dbus_service.register()
+
+            logger.info(f"D-Bus service {DBUS_SERVICE_NAME} initialized and registered")
             return True
 
         except Exception as e:
             logger.error(f"Failed to setup D-Bus service: {e}")
             return False
+
+    def _publish_config_variables(self) -> None:
+        """
+        Publish configuration variables to D-Bus.
+
+        Adds all configuration constants to D-Bus paths under /Info/Config/
+        for monitoring and debugging purposes.
+        """
+        from .utils import PORT, BAUD_RATE, PROTOCOL, TIMEOUT, POLL_INTERVAL
+        from .utils import DBUS_SERVICE_NAME, DEVICE_INSTANCE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE
+
+        config_vars = {
+            'PORT': PORT,
+            'BAUD_RATE': BAUD_RATE,
+            'PROTOCOL': PROTOCOL,
+            'TIMEOUT': TIMEOUT,
+            'POLL_INTERVAL': POLL_INTERVAL,
+            'DBUS_SERVICE_NAME': DBUS_SERVICE_NAME,
+            'DEVICE_INSTANCE': DEVICE_INSTANCE,
+            'PRODUCT_NAME': PRODUCT_NAME,
+            'PRODUCT_ID': PRODUCT_ID,
+            'DEVICE_TYPE': DEVICE_TYPE,
+        }
+
+        for variable, value in config_vars.items():
+            if (
+                isinstance(value, float)
+                or isinstance(value, int)
+                or isinstance(value, str)
+            ):
+                self.dbus_service.add_path(f"/Info/Config/{variable}", value)
 
     def publish_inverter(self) -> bool:
         """

@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbushelper import DbusHelper
 from inverter import Inverter
-from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL, publish_config_variables
+from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL
 
 def poll_inverter(dbus_helper):
     """
@@ -81,9 +81,6 @@ def main():
     else:
         connection_type = "Unknown"
     dbus_helper.update_connection_type(connection_type)
-
-    # Publish config variables to D-Bus
-    publish_config_variables(dbus_helper.dbus_service)
 
     # Setup periodic polling timer
     logger.info(f"Setting up polling timer with interval {POLL_INTERVAL}ms")
