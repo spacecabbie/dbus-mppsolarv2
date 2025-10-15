@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbushelper import DbusHelper
 from inverter import Inverter
-from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL
+from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL, DEVICE_INSTANCE
 
 def poll_inverter(dbus_helper):
     """
@@ -55,7 +55,7 @@ def main():
     logger.info(f"Inverter created with port: {inverter.port}")
 
     # Create D-Bus helper
-    dbus_helper = DbusHelper(inverter)
+    dbus_helper = DbusHelper(inverter, DEVICE_INSTANCE)
 
     # Setup D-Bus service
     if not dbus_helper.setup_vedbus():

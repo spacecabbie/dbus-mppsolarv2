@@ -150,7 +150,17 @@ PORT = /dev/ttyUSB0          # Serial port (check with ls /dev/ttyUSB*)
 BAUD_RATE = 2400            # Communication baud rate
 PROTOCOL = PI30             # MPP Solar protocol
 TIMEOUT = 5                 # Connection timeout in seconds
+
+[DBUS]
+SERVICE_NAME = com.victronenergy.inverter  # D-Bus service name
+DEVICE_INSTANCE = 0         # Unique device instance (auto-assigned if in use)
 ```
+
+**Device Instance Configuration:**
+- Set `DEVICE_INSTANCE = 0` for the first inverter
+- For multiple inverters, use different instance numbers (0, 1, 2, etc.)
+- If the configured instance is already in use, the service will auto-assign the next available instance
+- The service name becomes `com.victronenergy.inverter.{instance}`
 
 **Find the correct serial port:**
 ```bash

@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Add path to velib_python
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), "..", "ext", "velib_python"))
 
-from .utils import logger, DBUS_SERVICE_NAME, DBUS_PATH_BASE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE
+from .utils import logger, DBUS_SERVICE_NAME, DBUS_PATH_BASE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE, DEVICE_INSTANCE
 
 try:
     import dbus
@@ -38,7 +38,7 @@ class DbusHelper:
     Based on the dbus-serialbattery DbusHelper but adapted for inverter data.
     """
 
-    def __init__(self, inverter, device_instance: int = 0):
+    def __init__(self, inverter, device_instance: int = None):
         """
         Initialize D-Bus helper.
 
@@ -46,12 +46,27 @@ class DbusHelper:
 
         Args:
             inverter: Inverter instance (MPP Solar inverter) to monitor
-            device_instance: Device instance number for uniqueness
+            device_instance: Device instance number for uniqueness (if None, uses config value)
         """
         self.inverter = inverter  # Reference to the inverter instance
-        self.device_instance = device_instance  # Device instance for uniqueness
+
+        # Use provided instance or get from config
+        if device_instance is None:
+            self.device_instance = DEVICE_INSTANCE
+        else:
+            self.device_instance = device_instance
+
+        # Construct the full service name with instance
+        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
+
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
+
+        # Validate and auto-assign device instance if needed
+        self._ensure_unique_device_instance()
+
+        # Update service name with final instance
+        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
 
         # Define D-Bus paths for inverter data
         # These paths follow Venus OS D-Bus API conventions
@@ -74,6 +89,46 @@ class DbusHelper:
             '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
         }
 
+    def _ensure_unique_device_instance(self) -> None:
+        """
+        Ensure the device instance is unique by checking for existing services.
+
+        If the configured device instance is already in use, automatically
+        find the next available instance number.
+        """
+        try:
+            import dbus
+            # Get the system bus
+            bus = dbus.SystemBus()
+
+            # Check if our desired service name is already registered
+            service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
+
+            # Try to find an available instance
+            instance = self.device_instance
+            max_attempts = 10  # Prevent infinite loops
+
+            for attempt in range(max_attempts):
+                try:
+                    # Check if this service name is already on the bus
+                    bus.get_object(service_name, '/')
+                    # If we get here, the service exists, try next instance
+                    instance += 1
+                    service_name = f"{DBUS_SERVICE_NAME}.{instance}"
+                    logger.warning(f"Device instance {instance-1} already in use, trying {instance}")
+                except dbus.exceptions.DBusException:
+                    # Service doesn't exist, this instance is available
+                    break
+
+            if instance != self.device_instance:
+                logger.info(f"Auto-assigned device instance {instance} (configured: {self.device_instance})")
+                self.device_instance = instance
+
+        except ImportError:
+            logger.warning("dbus module not available for instance checking, using configured instance")
+        except Exception as e:
+            logger.warning(f"Could not check device instance availability: {e}, using configured instance")
+
     def setup_vedbus(self, publish_config: bool = True) -> bool:
         """
         Setup D-Bus service.
@@ -89,7 +144,7 @@ class DbusHelper:
         """
         try:
             # Create the D-Bus service with register=False (don't register yet)
-            self.dbus_service = VeDbusService(DBUS_SERVICE_NAME, register=False)
+            self.dbus_service = VeDbusService(self.service_name, register=False)
 
             # Add all defined D-Bus paths to the service
             for path, info in self._dbus_paths.items():
@@ -102,7 +157,7 @@ class DbusHelper:
             # Now register the service after all paths are added
             self.dbus_service.register()
 
-            logger.info(f"D-Bus service {DBUS_SERVICE_NAME} initialized and registered")
+            logger.info(f"D-Bus service {self.service_name} initialized and registered")
             return True
 
         except Exception as e:
