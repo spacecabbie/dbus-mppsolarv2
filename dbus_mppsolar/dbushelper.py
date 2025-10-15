@@ -56,8 +56,8 @@ class DbusHelper:
         else:
             self.device_instance = device_instance
 
-        # Construct the full service name with instance
-        self.service_name = f"{DBUS_SERVICE_NAME}_{self.device_instance}"
+        # Construct the full service name (Venus OS uses base name without instance)
+        self.service_name = DBUS_SERVICE_NAME
 
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
