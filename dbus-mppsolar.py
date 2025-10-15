@@ -73,6 +73,26 @@ class MPPService:
                 logger.error("Failed to setup D-Bus service")
                 return False
 
+            # Update management information
+            # Set process name to the actual service name
+            self.dbus_helper.update_process_name("dbus-mppsolar")
+
+            # Set process version
+            self.dbus_helper.update_process_version("0.0.1-alpha")
+
+            # Determine connection type based on port
+            if PORT.startswith('/dev/hidraw'):
+                connection_type = "USB HID"
+            elif PORT.startswith('/dev/tty'):
+                connection_type = "Serial USB"
+            elif PORT.startswith('/dev/ttyUSB'):
+                connection_type = "Serial USB"
+            elif PORT.startswith('/dev/ttyACM'):
+                connection_type = "Serial ACM"
+            else:
+                connection_type = "Unknown"
+            self.dbus_helper.update_connection_type(connection_type)
+
             logger.info("MPP Solar D-Bus service setup complete")
             return True
 
