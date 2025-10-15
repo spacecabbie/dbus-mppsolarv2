@@ -67,16 +67,8 @@ class MPPService:
                 logger.error("Failed to connect to MPP Solar device")
                 return False
 
-            # Get unique identifier for device instance assignment
-            unique_id = self.inverter.unique_identifier()
-            logger.info(f"Device unique identifier: {unique_id}")
-
-            # Get device instance from LocalSettings
-            device_instance = self._get_device_instance(unique_id)
-            logger.info(f"Assigned device instance: {device_instance}")
-
             # Initialize D-Bus helper for Venus OS integration
-            self.dbus_helper = DbusHelper(self.inverter, device_instance)
+            self.dbus_helper = DbusHelper(self.inverter)
             if not self.dbus_helper.setup_vedbus():
                 logger.error("Failed to setup D-Bus service")
                 return False
@@ -87,22 +79,6 @@ class MPPService:
         except Exception as e:
             logger.error(f"Error during service setup: {e}")
             return False
-
-    def _get_device_instance(self, unique_id: str) -> int:
-        """
-        Get device instance from LocalSettings.
-
-        Uses Venus OS LocalSettings to assign a unique device instance
-        for this device. For PV inverters, uses class 'pvinverter'.
-
-        Args:
-            unique_id: Unique identifier for the device
-
-        Returns:
-            int: Assigned device instance number
-        """
-        # For now, use a fixed instance number to avoid LocalSettings complexity
-        return 0
 
     def run(self) -> None:
         """

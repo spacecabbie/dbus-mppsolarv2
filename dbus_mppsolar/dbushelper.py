@@ -57,16 +57,10 @@ class DbusHelper:
             self.device_instance = device_instance
 
         # Construct the full service name with instance
-        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
+        self.service_name = f"{DBUS_SERVICE_NAME}_{self.device_instance}"
 
         self.dbus_service = None  # VeDbusService instance
         self._paths: Dict[str, Any] = {}  # Dictionary of D-Bus paths
-
-        # Validate and auto-assign device instance if needed
-        self._ensure_unique_device_instance()
-
-        # Update service name with final instance
-        self.service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
 
         # Define D-Bus paths for inverter data
         # These paths follow Venus OS D-Bus API conventions
@@ -89,46 +83,6 @@ class DbusHelper:
             '/Mgmt/ProcessVersion': {'value': '1.0.0', 'text': 'Process Version'},    # Process version
             '/Mgmt/Connection': {'value': 'Serial USB', 'text': 'Connection Type'},   # Connection type
         }
-
-    def _ensure_unique_device_instance(self) -> None:
-        """
-        Ensure the device instance is unique by checking for existing services.
-
-        If the configured device instance is already in use, automatically
-        find the next available instance number.
-        """
-        try:
-            import dbus
-            # Get the system bus
-            bus = dbus.SystemBus()
-
-            # Check if our desired service name is already registered
-            service_name = f"{DBUS_SERVICE_NAME}.{self.device_instance}"
-
-            # Try to find an available instance
-            instance = self.device_instance
-            max_attempts = 10  # Prevent infinite loops
-
-            for attempt in range(max_attempts):
-                try:
-                    # Check if this service name is already on the bus
-                    bus.get_object(service_name, '/')
-                    # If we get here, the service exists, try next instance
-                    instance += 1
-                    service_name = f"{DBUS_SERVICE_NAME}.{instance}"
-                    logger.warning(f"Device instance {instance-1} already in use, trying {instance}")
-                except dbus.exceptions.DBusException:
-                    # Service doesn't exist, this instance is available
-                    break
-
-            if instance != self.device_instance:
-                logger.info(f"Auto-assigned device instance {instance} (configured: {self.device_instance})")
-                self.device_instance = instance
-
-        except ImportError:
-            logger.warning("dbus module not available for instance checking, using configured instance")
-        except Exception as e:
-            logger.warning(f"Could not check device instance availability: {e}, using configured instance")
 
     def setup_vedbus(self, publish_config: bool = True) -> bool:
         """
