@@ -95,30 +95,46 @@ For direct communication with your MPP Solar inverter (useful for testing and de
 
 ## D-Bus Paths
 
-The service publishes the following D-Bus paths:
+The service publishes the following D-Bus paths under the service name `com.victronenergy.inverter`:
 
-### Inverter Data Paths
-- `/Ac/Out/L1/V` - AC output voltage
-- `/Ac/Out/L1/I` - AC output current
-- `/Ac/Out/L1/P` - AC output power
-- `/Ac/Out/L1/F` - AC frequency
-- `/Dc/0/Voltage` - DC input voltage
-- `/Dc/0/Current` - DC input current
-- `/Dc/0/Power` - DC input power
+### AC Output Data Paths
+- `/Ac/Out/L1/V` - AC output voltage (V)
+- `/Ac/Out/L1/I` - AC output current (A)
+- `/Ac/Out/L1/P` - AC output power (W)
+- `/Ac/Out/L1/F` - AC output frequency (Hz)
+
+### DC Input Data Paths
+- `/Dc/0/Voltage` - DC input voltage (V) - mapped from AC for compatibility
+- `/Dc/0/Current` - DC input current (A) - mapped from AC for compatibility
+- `/Dc/0/Power` - DC input power (W) - mapped from AC for compatibility
 
 ### Device Information Paths
-- `/DeviceInstance` - Device instance ID (dynamically assigned)
-- `/ProductId` - Product ID
-- `/ProductName` - Product name
-- `/FirmwareVersion` - Firmware version
-- `/Connected` - Connection status (0/1)
+- `/DeviceInstance` - Device instance ID (0 by default)
+- `/ProductId` - Product ID (hex value)
+- `/ProductName` - Product name ("MPP Solar Inverter")
+- `/FirmwareVersion` - Firmware version ("0.0.1-alpha")
+
+### Status and State Paths
+- `/Connected` - Connection status (0=Disconnected, 1=Connected)
 - `/Status` - Service status (0=Offline, 1=Running)
 - `/State` - Inverter operational state (0=Off, 9=Inverting)
 
 ### Management Paths
-- `/Mgmt/ProcessName` - Process name (default: "dbus-mppsolar")
-- `/Mgmt/ProcessVersion` - Process version (default: "1.0.0")
-- `/Mgmt/Connection` - Connection type (auto-detected: "USB HID", "Serial USB", "Serial ACM", etc.)
+- `/Mgmt/ProcessName` - Process name ("dbus-mppsolar")
+- `/Mgmt/ProcessVersion` - Process version ("0.0.1-alpha")
+- `/Mgmt/Connection` - Connection type ("USB HID", "Serial USB", "Serial ACM")
+
+### Configuration Paths
+- `/Info/Config/PORT` - Serial port configuration
+- `/Info/Config/BAUD_RATE` - Communication baud rate
+- `/Info/Config/PROTOCOL` - MPP Solar protocol version
+- `/Info/Config/TIMEOUT` - Connection timeout
+- `/Info/Config/POLL_INTERVAL` - Data polling interval (ms)
+- `/Info/Config/DBUS_SERVICE_NAME` - D-Bus service name
+- `/Info/Config/DEVICE_INSTANCE` - Device instance number
+- `/Info/Config/PRODUCT_NAME` - Product name
+- `/Info/Config/PRODUCT_ID` - Product ID
+- `/Info/Config/DEVICE_TYPE` - Device type
 
 ## Troubleshooting
 
@@ -238,7 +254,7 @@ dbus -y com.victronenergy.inverter_0 /State GetValue
 dbus -y com.victronenergy.inverter_0 /ProductName GetValue
 ```
 
-**Note:** The actual service name will be `com.victronenergy.inverter_{instance}` where `{instance}` is the device instance number (0, 1, 2, etc.).
+**Note:** The actual service name will be `com.victronenergy.inverter` (without instance suffix for Venus OS compatibility).
 
 ```
 dbus-mppsolarv2/
@@ -247,12 +263,14 @@ dbus-mppsolarv2/
 ├── dbus-mppsolar.py                    # 🚀 Main D-Bus service entry point and main loop
 ├── standalone_mppsolar_test.py         # 🧪 Standalone testing script for device connection
 ├── mpp-solar/                          # 📦 MPP Solar communication library (git submodule)
-├── dbus-mppsolar/                      # 📁 Core service modules directory
-│   ├── inverter.py                     # 🔋 MPP Solar inverter device implementation
+├── dbus_mppsolar/                      # 📁 Core service modules directory
+│   ├── __init__.py                     # 🐍 Python package initialization
+│   ├── inverter.py                     # � MPP Solar inverter device implementation
 │   ├── dbushelper.py                   # 🔌 D-Bus communication helper for Venus OS
 │   ├── utils.py                        # 🛠️ Configuration management and utility functions
 │   ├── config.default.ini              # ⚙️ Default configuration template
-│   └── dbus-mppsolar.py                # 🔄 Alternative service entry point (duplicate)
+│   ├── config.ini                      # ⚙️ User configuration file (created from default)
+│   └── dbus-mppsolar.py                # 🔄 Alternative service entry point
 ├── service/                            # 🔧 Systemd service configuration
 │   └── com.victronenergy.mppsolar.service # 📋 Systemd service definition file
 ├── test/                               # 🧪 Testing directory
@@ -278,43 +296,44 @@ dbus-mppsolarv2/
 #### **Root Level Files**
 - **`README.md`** - Comprehensive project documentation including installation, configuration, usage, and troubleshooting
 - **`pyproject.toml`** - Python project configuration defining dependencies (mpp-solar, pyserial, dbus-python, gobject)
-- **`dbus-mppsolar.py`** - Main service entry point that initializes D-Bus, sets up the MPP service, and runs the main event loop
+- **`dbus-mppsolar.py`** - Main service entry point that initializes D-Bus, sets up the MPPService, and runs the main event loop
 - **`standalone_mppsolar_test.py`** - Independent testing script to verify MPP Solar device connection and data retrieval
 
-#### **MPP Solar Library (`mpp-solar/`)**
+#### **MPP Solar Library (`mpp-solar/`)**  
 - **`mpp-solar/`** - Git submodule containing the MPP Solar communication library for inverter protocol handling
 
-#### **Core Service Directory (`dbus-mppsolar/`)**
+#### **Core Service Directory (`dbus_mppsolar/`)**  
+- **`__init__.py`** - Python package initialization file
 - **`inverter.py`** - Implements the Inverter class that handles MPP Solar inverter communication using the mpp-solar package
-- **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
+- **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration  
 - **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
 - **`config.default.ini`** - Template configuration file with default settings for port, baud rate, protocol, and timeouts
-- **`dbus-mppsolar.py`** - Alternative/duplicate service entry point (may be redundant)
+- **`config.ini`** - User configuration file (created from config.default.ini during installation)
+- **`dbus-mppsolar.py`** - Alternative service entry point (may be redundant with root level file)
 
-#### **Service Configuration (`service/`)**
+#### **Service Configuration (`service/`)**  
 - **`com.victronenergy.mppsolar.service`** - Systemd service definition for automatic startup and management
 
-#### **Testing (`test/`)**
+#### **Testing (`test/`)**  
 - **`README.md`** - Documentation for testing procedures and expected results
 
-#### **GitHub Configuration (`.github/`)**
+#### **GitHub Configuration (`.github/`)**  
 - **`copilot-instructions.md`** - Instructions for AI assistants on project development guidelines and workflow
 
-#### **Management Scripts (`*.sh`)**
+#### **Management Scripts (`*.sh`)**  
 - **`install.sh`** - Automated installation script that sets up dependencies, copies files, and configures systemd
-- **`uninstall.sh`** - Removes the service, cleans up files, and disables systemd service
+- **`uninstall.sh`** - Removes the service, cleans up files, and disables systemd service  
 - **`enable.sh`** - Enables the systemd service for automatic startup
 - **`disable.sh`** - Disables the systemd service
 - **`restart.sh`** - Restarts the running service
 - **`start-mppsolar.sh`** - Manual service startup script
+- **`run-mpp-solar.sh`** - Direct MPP Solar communication wrapper (Venus OS compatible)
 
-#### **Reserved Directories**
-- **`bms/`** - Empty directory reserved for future BMS (Inverter Management System) driver implementations
-- **`ext/`** - Empty directory for external dependencies and libraries
+#### **Reserved Directories**  
+- **`bms/`** - Empty directory reserved for future BMS (Battery Management System) driver implementations
+- **`ext/`** - Empty directory for external dependencies and libraries  
 - **`qml/`** - Empty directory for QML user interface components (if GUI development is added)
-- **`rc/`** - Empty directory for runtime configuration scripts and hooks
-
-## License
+- **`rc/`** - Empty directory for runtime configuration scripts and hooks## License
 
 MIT License - see LICENSE file for details
 
@@ -377,10 +396,13 @@ classDiagram
         +dbus_service: VeDbusService
         +_paths: Dict
         +_dbus_paths: Dict
-        +__init__(battery)
+        +__init__(inverter)
         +setup_vedbus() bool
         +publish_inverter() bool
         +publish_dbus() bool
+        +update_process_name(name) bool
+        +update_process_version(version) bool
+        +update_connection_type(connection) bool
     }
 
     class Utils {
@@ -398,7 +420,7 @@ classDiagram
     DbusHelper --> Inverter : monitors
 
     note for MPPService "Main service orchestrator\nManages service lifecycle"
-    note for Inverter "MPP Solar device handler\nCommunicates with inverter"
+    note for Inverter "MPP Solar device handler\nCommunicates with inverter hardware"
     note for DbusHelper "D-Bus interface manager\nPublishes data to Venus OS"
     note for Utils "Configuration & utilities\nLogging, config loading"
 ```
@@ -455,28 +477,28 @@ flowchart TD
 sequenceDiagram
     participant M as main()
     participant S as MPPService
-    participant B as Inverter
+    participant I as Inverter
     participant D as DbusHelper
     participant DB as D-Bus
 
     M->>S: MPPService()
-    S->>B: Inverter()
-    B->>B: _init_device()
-    B->>B: test_connection()
-    S->>D: DbusHelper(battery)
+    S->>I: Inverter()
+    I->>I: _init_device()
+    I->>I: test_connection()
+    S->>D: DbusHelper(inverter)
     D->>D: setup_vedbus()
     D->>DB: Create VeDbusService
     D->>DB: Add D-Bus paths
 
     M->>S: setup()
-    S->>B: test_connection()
-    B-->>S: connection result
+    S->>I: test_connection()
+    I-->>S: connection result
     S->>D: setup_vedbus()
     D-->>S: setup result
     S-->>M: setup result
 
     M->>S: run()
-    S->>D: publish_battery()
+    S->>D: publish_inverter()
     D->>DB: Publish initial data
     S->>S: Setup signal handlers
     S->>S: Create MainLoop
@@ -484,11 +506,11 @@ sequenceDiagram
 
     loop Periodic updates
         S->>S: _update_data()
-        S->>B: refresh_data()
-        B->>B: get_general_status()
-        B->>B: _parse_status_data()
-        B-->>S: data
-        S->>D: publish_battery()
+        S->>I: refresh_data()
+        I->>I: get_general_status()
+        I->>I: _parse_status_data()
+        I-->>S: data
+        S->>D: publish_inverter()
         D->>DB: Update D-Bus paths
     end
 
@@ -503,16 +525,16 @@ sequenceDiagram
 graph LR
     subgraph "Configuration Layer"
         CFG["config.default.ini"] --> U["utils.py"]
-        CFG --> B["inverter.py"]
+        CFG --> I["inverter.py"]
     end
 
     subgraph "Communication Layer"
-        MPP["mpp-solar/ (submodule)"] --> B
-        SERIAL["Serial Port /dev/ttyUSB0"] --> B
+        MPP["mpp-solar/ (submodule)"] --> I
+        SERIAL["Serial Port /dev/ttyUSB0"] --> I
     end
 
     subgraph "Service Layer"
-        B --> S["dbus-mppsolar.py MPPService"]
+        I --> S["dbus-mppsolar.py MPPService"]
         U --> S
         D["dbushelper.py DbusHelper"] --> S
     end
@@ -528,7 +550,7 @@ graph LR
         INST["install.sh"] --> SYS["systemd service"]
         EN["enable.sh"] --> SYS
         START["start-mppsolar.sh"] --> S
-        TEST["standalone_mppsolar_test.py"] --> B
+        TEST["standalone_mppsolar_test.py"] --> I
     end
 
     classDef config fill:#e3f2fd
@@ -539,7 +561,7 @@ graph LR
 
     class CFG config
     class MPP,SERIAL comm
-    class B,U,S,D service
+    class I,U,S,D service
     class DBUS,VRM,GUI integration
     class INST,EN,START,TEST,SYS management
 ```
@@ -547,24 +569,24 @@ graph LR
 ### 📋 Component Relationships Explained
 
 #### **Class Relationships:**
-- **MPPService** → **Battery**: Creates and manages the battery instance
+- **MPPService** → **Inverter**: Creates and manages the inverter instance
 - **MPPService** → **DbusHelper**: Creates and manages the D-Bus interface
-- **Battery** → **Utils**: Uses logging and configuration utilities
+- **Inverter** → **Utils**: Uses logging and configuration utilities
 - **DbusHelper** → **Utils**: Uses logging and D-Bus constants
-- **DbusHelper** → **Battery**: Monitors battery data for publishing
+- **DbusHelper** → **Inverter**: Monitors inverter data for publishing
 
 #### **Execution Flow:**
 1. **Entry Point**: `dbus-mppsolar.py:main()` initializes D-Bus and creates service
-2. **Setup Phase**: Service initializes battery connection and D-Bus interface
+2. **Setup Phase**: Service initializes inverter connection and D-Bus interface
 3. **Runtime Phase**: Main loop runs with periodic data updates every 1 second
-4. **Data Flow**: Battery → MPPService → DbusHelper → D-Bus → Venus OS
+4. **Data Flow**: Inverter → MPPService → DbusHelper → D-Bus → Venus OS
 5. **Shutdown**: Signal handlers gracefully stop the service
 
 #### **Key Data Paths:**
 - **AC Data**: `ac_voltage`, `ac_current`, `ac_power`, `frequency`
 - **DC Data**: `voltage`, `current`, `power` (mapped from AC for compatibility)
-- **Status**: `online`, `connection_info`, `soc`, `capacity`
-- **D-Bus Paths**: `/Ac/Out/L1/*`, `/Dc/0/*`, `/Connected`, `/Status`
+- **Status**: `online`, `connection_info`
+- **D-Bus Paths**: `/Ac/Out/L1/*`, `/Dc/0/*`, `/Connected`, `/Status`, `/State`
 
 
 This architecture provides a clean separation between device communication, data processing, and system integration, making it maintainable and extensible for Venus OS compatibility.
