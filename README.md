@@ -160,7 +160,7 @@ DEVICE_INSTANCE = 0         # Unique device instance (auto-assigned if in use)
 - Set `DEVICE_INSTANCE = 0` for the first inverter
 - For multiple inverters, use different instance numbers (0, 1, 2, etc.)
 - If the configured instance is already in use, the service will auto-assign the next available instance
-- The service name becomes `com.victronenergy.inverter.{instance}`
+- The service name becomes `com.victronenergy.inverter_{instance}`
 
 **Find the correct serial port:**
 ```bash
@@ -225,14 +225,16 @@ systemctl restart com.victronenergy.mppsolar.service
 Check if D-Bus paths are published correctly:
 
 ```bash
-# List all D-Bus services
-dbus -y com.victronenergy.inverter /DeviceInstance GetValue
+# List all D-Bus services (service name will include instance, e.g., com.victronenergy.inverter_0)
+dbus -y com.victronenergy.inverter_0 /DeviceInstance GetValue
 
 # Check specific paths
-dbus -y com.victronenergy.inverter /Ac/Out/L1/V GetValue
-dbus -y com.victronenergy.inverter /Connected GetValue
-dbus -y com.victronenergy.inverter /ProductName GetValue
+dbus -y com.victronenergy.inverter_0 /Ac/Out/L1/V GetValue
+dbus -y com.victronenergy.inverter_0 /Connected GetValue
+dbus -y com.victronenergy.inverter_0 /ProductName GetValue
 ```
+
+**Note:** The actual service name will be `com.victronenergy.inverter_{instance}` where `{instance}` is the device instance number (0, 1, 2, etc.).
 
 ```
 dbus-mppsolarv2/
