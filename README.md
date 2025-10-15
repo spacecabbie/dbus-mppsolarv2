@@ -183,7 +183,12 @@ ssh root@venus-device-ip
    cd dbus-mppsolarv2
    ```
 
-2. **Run the installation script:**
+2. **Initialize and update the mpp-solar submodule:**
+   ```bash
+   git submodule update --init --recursive
+   ```
+
+3. **Run the installation script:**
    ```bash
    ./install.sh
    ```
@@ -206,7 +211,12 @@ ssh root@venus-device-ip
    cd dbus-mppsolarv2
    ```
 
-2. **Run the installation script:**
+2. **Initialize the mpp-solar submodule:**
+   ```bash
+   git submodule update --init --recursive
+   ```
+
+3. **Run the installation script:**
    ```bash
    ./install.sh
    ```
@@ -219,10 +229,15 @@ ssh root@venus-device-ip
    scp -r dbus-mppsolar root@venus-device:/data/etc/dbus-mppsolarv2
    ```
 
-2. **Connect to Venus OS and run installation:**
+2. **Connect to Venus OS and initialize submodule:**
    ```bash
    ssh root@venus-device
    cd /data/etc/dbus-mppsolarv2
+   git submodule update --init --recursive
+   ```
+
+3. **Run the installation script:**
+   ```bash
    ./install.sh
    ```
 
@@ -428,6 +443,7 @@ systemctl stop com.victronenergy.mppsolar.service
 # Update from repository
 cd /data/etc/dbus-mppsolarv2
 git pull origin master
+git submodule update --init --recursive
 
 # Restart service
 systemctl start com.victronenergy.mppsolar.service
@@ -444,6 +460,9 @@ mv /data/etc/dbus-mppsolarv2 /data/etc/dbus-mppsolarv2.old
 
 # Install new version
 # (transfer and install as described above)
+
+# Initialize submodule
+git submodule update --init --recursive
 
 # Restore configuration
 cp /data/etc/dbus-mppsolarv2.old/config.ini /data/etc/dbus-mppsolarv2/
@@ -470,7 +489,8 @@ dbus-mppsolarv2/
 ├── pyproject.toml                      # ⚙️ Python project configuration with dependencies
 ├── dbus-mppsolar.py                    # 🚀 Main D-Bus service entry point and main loop
 ├── standalone_mppsolar_test.py         # 🧪 Standalone testing script for device connection
-├── dbus_mppsolar/                      # 📁 Core service modules directory
+├── mpp-solar/                          # 📦 MPP Solar communication library (git submodule)
+├── dbus-mppsolar/                      # 📁 Core service modules directory
 │   ├── battery.py                      # 🔋 MPP Solar inverter device implementation
 │   ├── dbushelper.py                   # 🔌 D-Bus communication helper for Venus OS
 │   ├── utils.py                        # 🛠️ Configuration management and utility functions
@@ -503,7 +523,10 @@ dbus-mppsolarv2/
 - **`dbus-mppsolar.py`** - Main service entry point that initializes D-Bus, sets up the MPP service, and runs the main event loop
 - **`standalone_mppsolar_test.py`** - Independent testing script to verify MPP Solar device connection and data retrieval
 
-#### **Core Service Directory (`dbus_mppsolar/`)**
+#### **MPP Solar Library (`mpp-solar/`)**
+- **`mpp-solar/`** - Git submodule containing the MPP Solar communication library for inverter protocol handling
+
+#### **Core Service Directory (`dbus-mppsolar/`)**
 - **`battery.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
 - **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
 - **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
@@ -726,7 +749,7 @@ graph LR
     end
 
     subgraph "Communication Layer"
-        MPP["mpp-solar package"] --> B
+        MPP["mpp-solar/ (submodule)"] --> B
         SERIAL["Serial Port /dev/ttyUSB0"] --> B
     end
 

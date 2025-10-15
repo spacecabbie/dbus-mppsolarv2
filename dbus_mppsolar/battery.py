@@ -15,9 +15,15 @@ from abc import ABC, abstractmethod
 
 # Import mpp-solar package for inverter communication
 try:
+    import sys
+    import os
+    # Add mpp-solar submodule to path
+    mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar')
+    if mpp_solar_path not in sys.path:
+        sys.path.insert(0, mpp_solar_path)
     from mppsolar import MPP
 except ImportError:
-    print("mpp-solar package not found. Please install with: pip install git+https://github.com/jblance/mpp-solar.git")
+    print("mpp-solar submodule not found. Please run: git submodule update --init --recursive")
     MPP = None
 
 from .utils import logger

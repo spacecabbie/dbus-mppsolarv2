@@ -1,0 +1,3 @@
+[submodule "mpp-solar"]
+	path = mpp-solar
+	url = https://github.com/jblance/mpp-solar.git
