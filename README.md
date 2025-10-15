@@ -68,6 +68,29 @@ Run standalone tests:
 python3 test/standalone_mppsolar_test.py
 ```
 
+#### Direct MPP Solar Communication
+
+For direct communication with your MPP Solar inverter (useful for testing and debugging), use the provided wrapper script:
+
+```bash
+# Get device protocol info
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPI
+
+# Get full inverter status
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPIGS
+
+# Get device mode
+./run-mpp-solar.sh -p /dev/hidraw0 -c QMOD
+
+# With debug output
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPIGS -D
+
+# List available commands for PI30 protocol
+./run-mpp-solar.sh -P PI30 -c
+```
+
+**Note:** The `run-mpp-solar.sh` script is specifically designed for Venus OS to avoid Python package installation conflicts. It provides direct access to all mpp-solar functionality without requiring package installation.
+
 ## D-Bus Paths
 
 The service publishes the following D-Bus paths:
@@ -155,7 +178,21 @@ Device Info: {...}
 Status Data: {...}
 ```
 
-#### 2. Service Status Check
+#### 2. Direct MPP Solar Communication Test
+
+Test direct communication with the inverter using the wrapper script:
+
+```bash
+# Basic connectivity test
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPI
+
+# Full status test
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPIGS -I
+```
+
+This bypasses the D-Bus service and tests raw inverter communication.
+
+#### 3. Service Status Check
 
 ```bash
 # Check if service is running
@@ -207,7 +244,8 @@ dbus-mppsolarv2/
 │   ├── enable.sh                       # ✅ Enable systemd service
 │   ├── disable.sh                      # ❌ Disable systemd service
 │   ├── restart.sh                      # 🔄 Restart service script
-│   └── start-mppsolar.sh               # ▶️ Manual service start script
+│   ├── start-mppsolar.sh               # ▶️ Manual service start script
+│   └── run-mpp-solar.sh                # 🔧 Direct MPP Solar communication wrapper
 ├── bms/                                # 🔋 Empty directory (reserved for future BMS drivers)
 ├── ext/                                # 📦 Empty directory (reserved for external dependencies)
 ├── qml/                                # 🎨 Empty directory (reserved for QML UI components)
