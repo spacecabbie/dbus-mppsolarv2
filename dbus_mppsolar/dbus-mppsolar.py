@@ -16,7 +16,7 @@ import gi.repository.GObject as gobject
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbushelper import DbusHelper
-from battery import Battery
+from inverter import Battery
 from .utils import logger, PORT, BAUD_RATE, POLL_INTERVAL, publish_config_variables
 
 def poll_inverter(dbus_helper):

@@ -16,7 +16,7 @@ from typing import Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbus_mppsolar.utils import logger, get_config_value, safe_number_format, PORT, BAUD_RATE, POLL_INTERVAL
-from dbus_mppsolar.battery import Battery
+from dbus_mppsolar.inverter import Battery
 from dbus_mppsolar.dbushelper import DbusHelper
 
 try:

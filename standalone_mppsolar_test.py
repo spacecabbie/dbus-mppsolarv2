@@ -14,7 +14,7 @@ import time
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbus_mppsolar.utils import logger, get_config_value
-from dbus_mppsolar.battery import Battery
+from dbus_mppsolar.inverter import Battery
 
 def test_connection():
     """

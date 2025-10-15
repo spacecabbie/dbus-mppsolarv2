@@ -16,7 +16,7 @@ This is a Venus OS D-Bus service for MPP Solar inverters (PI30 series) that adap
 
 ## Key Components
 - `dbus-mppsolar.py`: Main service entry point with D-Bus integration
-- `battery.py`: MPP Solar device implementation
+- `inverter.py`: MPP Solar device implementation
 - `dbushelper.py`: D-Bus helper for Venus OS paths
 - `utils.py`: Configuration and utility functions
 - Service files for systemd integration
@@ -41,7 +41,7 @@ Short goal: maintain the Venus OS D-Bus service that exposes MPP Solar (PI30) in
 Keep this doc short and actionable. When making changes, reference these canonical files and examples in the repo:
 
 - Entry points: `dbus-mppsolar.py` (root) and `dbus_mppsolar/dbus-mppsolar.py`
-- Device implementation: `dbus_mppsolar/battery.py`
+- Device implementation: `dbus_mppsolar/inverter.py`
 - D-Bus publishing: `dbus_mppsolar/dbushelper.py`
 - Config & helpers: `dbus_mppsolar/utils.py` and `dbus_mppsolar/config.default.ini`
 - Tests & quick checks: `standalone_mppsolar_test.py`
@@ -60,7 +60,7 @@ Developer workflows (commands you will use)
 - View logs: `journalctl -u com.victronenergy.mppsolar.service -f` (for systemd) or stdout from the foreground run.
 
 Project-specific conventions
-- mpp-solar is included as a submodule under `mpp-solar/`; prefer using its device API via `dbus_mppsolar/battery.py` wrapper rather than importing it directly across modules.
+- mpp-solar is included as a submodule under `mpp-solar/`; prefer using its device API via `dbus_mppsolar/inverter.py` wrapper rather than importing it directly across modules.
 - Keep D-Bus exposure stable: adding or renaming paths can break VRM/GUI. Add new paths only when necessary and document them in `README.md`.
 - Tests: there are no unit tests for most modules; use `standalone_mppsolar_test.py` and manual runs. When adding tests, keep them light and device-independent (mock serial or use a simulated device).
 - Development history: Adapted from dbus-serialbattery codebase; handle submodule imports by adding `sys.path.insert(0, os.path.join(os.path.dirname(__file__), "mpp-solar"))` if needed. Map inverter status dict to D-Bus paths in `update_paths_from_status()`. Add detailed docstrings and inline comments for all code. Include "commit by: Grok" in AI-generated commit messages.

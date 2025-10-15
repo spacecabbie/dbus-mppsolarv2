@@ -491,7 +491,7 @@ dbus-mppsolarv2/
 ├── standalone_mppsolar_test.py         # 🧪 Standalone testing script for device connection
 ├── mpp-solar/                          # 📦 MPP Solar communication library (git submodule)
 ├── dbus-mppsolar/                      # 📁 Core service modules directory
-│   ├── battery.py                      # 🔋 MPP Solar inverter device implementation
+│   ├── inverter.py                     # 🔋 MPP Solar inverter device implementation
 │   ├── dbushelper.py                   # 🔌 D-Bus communication helper for Venus OS
 │   ├── utils.py                        # 🛠️ Configuration management and utility functions
 │   ├── config.default.ini              # ⚙️ Default configuration template
@@ -527,7 +527,7 @@ dbus-mppsolarv2/
 - **`mpp-solar/`** - Git submodule containing the MPP Solar communication library for inverter protocol handling
 
 #### **Core Service Directory (`dbus-mppsolar/`)**
-- **`battery.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
+- **`inverter.py`** - Implements the Battery class that handles MPP Solar inverter communication using the mpp-solar package
 - **`dbushelper.py`** - D-Bus helper class that publishes inverter data to Venus OS D-Bus paths for system integration
 - **`utils.py`** - Utility functions for configuration loading, logging setup, and Venus OS constants
 - **`config.default.ini`** - Template configuration file with default settings for port, baud rate, protocol, and timeouts
@@ -745,7 +745,7 @@ sequenceDiagram
 graph LR
     subgraph "Configuration Layer"
         CFG["config.default.ini"] --> U["utils.py"]
-        CFG --> B["battery.py"]
+        CFG --> B["inverter.py"]
     end
 
     subgraph "Communication Layer"

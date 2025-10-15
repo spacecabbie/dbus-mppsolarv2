@@ -10,7 +10,7 @@ import os
 print("Current working directory:", os.getcwd())
 print("Script location:", os.path.dirname(os.path.abspath(__file__)))
 
-# Calculate the mpp_solar_path as done in battery.py
+# Calculate the mpp_solar_path as done in inverter.py
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 mpp_solar_path = os.path.join(parent_dir, 'mpp-solar', 'mppsolar')
