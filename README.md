@@ -1,67 +1,36 @@
-# dbus-mppsolar
+# dbus-mppsolar v2
 
-Venus OS D-Bus service for MPP Solar inverters, specifically designed for PI30 models.
+## Venus OS D-Bus Service for MPP Solar Inverters
 
 **Version: 0.0.1-alpha** - This is an alpha release. Use with caution in production environments.
 
-This service adapts the [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) codebase to work with MPP Solar inverters using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package.
+This service adapts the [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) codebase to work with MPP Solar inverters using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package. It is compatible with Venus OS devices, including any Victron GX device or a Raspberry Pi running the Venus OS image.
 
-## Disclaimer
+## Functionality
 
-**Initial code conversion via Grok xAI**  
-**Modifications and Testing by: HHaufe (spacecabbie)**
+The driver communicates with MPP Solar-compatible inverters via serial or USB connections. It publishes inverter data to the Venus OS D-Bus, enabling the inverter to function as a device within the GX system. Key features include providing AC load and other values to Venus OS.
 
-## Features
+## Implementation
+
+This service integrates the following repositories:
+- [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery)
+- [dbus-mppsolar](https://github.com/DarkZeros/dbus-mppsolar)
+
+It leverages the [mpp-solar](https://github.com/jblance/mpp-solar) Python package, adopting best practices from `dbus-serialbattery` for optimal code structure and implementation to support MPP Solar inverters.
+
+
+## Note
+
+**Initial code adapted from the aforementioned repositories by Grok AI.**  
+**AI instructions, guidance, and testing by: HHaufe (spacecabbie)**  
+
+This code is currently untested and should be used at your own risk. Contributions from experienced developers are welcome to help refine and improve the codebase.
+
+## Current working features are:
 
 - D-Bus integration with Venus OS
-- Support for PI30 inverters via serial and USB/HIDRAW connections
-- Real-time monitoring and control
-- Automatic inverter detection and configuration
+- Support for PI30 protocol inverters via USB/HIDRAW connections
 - Comprehensive logging and error handling
-
-## Requirements
-
-- Venus OS (or compatible Linux system with D-Bus)
-- Python 3.7+
-- MPP Solar inverter (PI30 series)
-- Serial or USB connection to inverter
-
-## Configuration
-
-1. Copy the default configuration:
-   ```bash
-   cp config.default.ini config.ini
-   ```
-
-2. Edit `config.ini` with your inverter settings:
-   - `PORT`: Serial port (e.g., `/dev/ttyUSB0`) or USB device path
-   - `BAUD_RATE`: Communication baud rate (default: 2400)
-   - `PROTOCOL`: MPP Solar protocol version (default: PI30)
-   - `TIMEOUT`: Connection timeout in seconds
-
-## Usage
-
-### Starting the Service
-
-```bash
-# Using systemd
-systemctl start com.victronenergy.mppsolar.service
-
-# Or run manually
-./start-mppsolar.sh
-```
-
-### Monitoring
-
-Check service status:
-```bash
-systemctl status com.victronenergy.mppsolar.service
-```
-
-View logs:
-```bash
-journalctl -u com.victronenergy.mppsolar.service -f
-```
 
 ### Testing
 
@@ -70,7 +39,21 @@ Run standalone tests:
 python3 test/standalone_mppsolar_test.py
 ```
 
-#### Direct MPP Solar Communication
+Expected output:
+```
+MPP Solar Device Test
+=====================
+Port: /dev/ttyUSB0
+Baud Rate: 2400
+Protocol: PI30
+
+Testing connection...
+✓ Connection successful!
+Device Info: {...}
+Status Data: {...}
+```
+
+#### Direct MPP Solar Communication testing
 
 For direct communication with your MPP Solar inverter (useful for testing and debugging), use the provided wrapper script:
 
@@ -138,20 +121,6 @@ The service publishes the following D-Bus paths under the service name `com.vict
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Connection Failed**
-   - Check USB/serial cable connection
-   - Verify inverter is powered on
-   - Check port permissions: `ls -la /dev/ttyUSB*`
-
-2. **D-Bus Errors**
-   - Ensure D-Bus is running: `systemctl status dbus`
-   - Check service permissions
-
-3. **Import Errors**
-   - Install missing dependencies: `pip3 install mpp-solar pyserial dbus-python gobject`
-
 ### Logs
 
 Check service logs:
@@ -175,12 +144,6 @@ SERVICE_NAME = com.victronenergy.inverter  # D-Bus service name
 DEVICE_INSTANCE = 0         # Unique device instance (auto-assigned if in use)
 ```
 
-**Device Instance Configuration:**
-- Set `DEVICE_INSTANCE = 0` for the first inverter
-- For multiple inverters, use different instance numbers (0, 1, 2, etc.)
-- If the configured instance is already in use, the service will auto-assign the next available instance
-- The service name becomes `com.victronenergy.inverter_{instance}`
-
 **Find the correct serial port:**
 ```bash
 ls /dev/ttyUSB* /dev/ttyACM* /dev/ttyS*
@@ -189,6 +152,7 @@ dmesg | grep tty  # Check recent serial device connections
 
 ### Testing
 
+<<<<<<< HEAD
 #### 1. Standalone Connection Test
 
 Test the MPP Solar device connection independently:
@@ -590,3 +554,4 @@ graph LR
 
 
 This architecture provides a clean separation between device communication, data processing, and system integration, making it maintainable and extensible for Venus OS compatibility.
+
