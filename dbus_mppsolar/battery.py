@@ -14,20 +14,48 @@ import configparser
 from abc import ABC, abstractmethod
 
 # Import mpp-solar package for inverter communication
-try:
-    import sys
-    import os
-    # Add mpp-solar submodule to path (the package is inside mpp-solar/mppsolar/)
-    mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar', 'mppsolar')
+import sys
+import os
+import importlib.util
+
+# Should we import and call manually, to use our version
+USE_SYSTEM_MPPSOLAR = False
+
+def load_mppsolar_helpers():
+    """Load mppsolar.helpers module directly to avoid __init__.py imports"""
+    if USE_SYSTEM_MPPSOLAR:
+        try:
+            # Try system installation first
+            import mppsolar.helpers as helpers
+            return helpers
+        except ImportError:
+            pass
+
+    # Load from submodule
+    mpp_solar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mpp-solar')
     if mpp_solar_path not in sys.path:
-        sys.path.insert(0, mpp_solar_path)
-    from mppsolar.helpers import get_device_class
-    # Get the mppsolar device class
+        sys.path.insert(1, mpp_solar_path)
+
+    helpers_path = os.path.join(mpp_solar_path, 'mppsolar', 'helpers.py')
+
+    if os.path.exists(helpers_path):
+        spec = importlib.util.spec_from_file_location("mppsolar.helpers", helpers_path)
+        helpers = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(helpers)
+        return helpers
+    else:
+        raise ImportError("mpp-solar helpers module not found")
+
+# Load the helpers module
+try:
+    helpers = load_mppsolar_helpers()
+    get_device_class = helpers.get_device_class
     MPP = get_device_class("mppsolar")
     if MPP is None:
         raise ImportError("Could not load mppsolar device class")
-except ImportError:
-    print("mpp-solar submodule not found. Please run: git submodule update --init --recursive")
+except ImportError as e:
+    print(f"mpp-solar submodule not found: {e}")
+    print("Please run: git submodule update --init --recursive")
     MPP = None
 
 from .utils import logger
