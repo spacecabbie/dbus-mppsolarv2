@@ -4,16 +4,21 @@
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SERVICE_DIR="/opt/victronenergy/dbus-mppsolar"
+SERVICE_DIR="/data/etc/dbus-mppsolarv2"
 SERVICE_FILE="/etc/systemd/system/com.victronenergy.mppsolar.service"
 
 echo "Installing MPP Solar D-Bus service..."
 
 # Check if running on Venus OS
-if [ ! -d "/opt/victronenergy" ]; then
+if [ ! -d "/data/etc" ]; then
     echo "Error: This script is designed for Venus OS"
     exit 1
 fi
+
+# Initialize and update submodules
+echo "Initializing git submodules..."
+cd "$SCRIPT_DIR"
+git submodule update --init --recursive
 
 # Create service directory
 echo "Creating service directory..."
@@ -23,10 +28,10 @@ mkdir -p "$SERVICE_DIR"
 echo "Copying service files..."
 cp -r "$SCRIPT_DIR"/* "$SERVICE_DIR/"
 
-# Install Python dependencies
+# Install Python dependencies (excluding mpp-solar which is now a submodule)
 echo "Installing Python dependencies..."
 cd "$SERVICE_DIR"
-pip3 install mpp-solar pyserial dbus-python gobject
+pip3 install pyserial dbus-python gobject
 
 # Install service
 echo "Installing systemd service..."
