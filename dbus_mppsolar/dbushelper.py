@@ -15,7 +15,7 @@ from typing import Dict, Any
 # Add current directory to path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import logger, DBUS_SERVICE_NAME, DBUS_PATH_BASE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE
+from .utils import logger, DBUS_SERVICE_NAME, DBUS_PATH_BASE, PRODUCT_NAME, PRODUCT_ID, DEVICE_TYPE
 
 try:
     import dbus

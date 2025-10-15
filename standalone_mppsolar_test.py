@@ -13,8 +13,8 @@ import time
 # Add current directory to Python path for module imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import logger
-from battery import Battery
+from dbus_mppsolar.utils import logger
+from dbus_mppsolar.battery import Battery
 
 def test_connection():
     """

@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from dbushelper import DbusHelper
 from battery import Battery
-from utils import logger
+from .utils import logger
 
 def main():
     """Main function to start the D-Bus service"""
