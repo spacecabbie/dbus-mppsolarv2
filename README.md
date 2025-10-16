@@ -2,7 +2,7 @@
 
 ## Venus OS D-Bus Service for MPP Solar Inverters with Multi/Solar Charger Architecture
 
-**Version: 1.0.0** - Production-ready implementation with comprehensive MPP Solar data mapping.
+**Version: 0.0.2-alpha** - Alpha release with VRM identification paths for Venus OS GUI visibility.
 
 This service implements a complete Venus OS D-Bus integration for MPP Solar inverters (PI30 series) using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package. It features a proper Multi/Solar Charger service architecture that correctly represents hybrid inverter/charger functionality and provides comprehensive data mapping for all MPP Solar values.
 

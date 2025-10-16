@@ -82,7 +82,7 @@ class DbusHelper:
         self._multi_paths = {
             # Management paths
             '/Mgmt/ProcessName': {'value': 'dbus-mppsolar', 'required': True, 'description': 'Process Name'},
-            '/Mgmt/ProcessVersion': {'value': '1.0.0', 'required': True, 'description': 'Process Version'},
+            '/Mgmt/ProcessVersion': {'value': '0.0.2-alpha', 'required': True, 'description': 'Process Version'},
             '/Mgmt/Connection': {'value': 'Serial USB', 'required': True, 'description': 'Connection Type'},
 
             # Identification paths
@@ -90,10 +90,17 @@ class DbusHelper:
             '/DeviceType': {'value': DEVICE_TYPE, 'required': True, 'description': 'Device Type'},
             '/ProductId': {'value': PRODUCT_ID, 'required': True, 'description': 'Product ID'},
             '/ProductName': {'value': PRODUCT_NAME, 'required': True, 'description': 'Product Name'},
-            '/FirmwareVersion': {'value': '1.0.0', 'required': True, 'description': 'Firmware Version'},
+            '/FirmwareVersion': {'value': '0.0.2-alpha', 'required': True, 'description': 'Firmware Version'},
             '/HardwareVersion': {'value': 0, 'required': True, 'description': 'Hardware Version'},
             '/Connected': {'value': 0, 'required': True, 'description': 'Connected'},
             '/Status': {'value': 0, 'required': True, 'description': 'Status'},
+
+            # VRM Portal identification paths
+            '/CustomName': {'value': 'MPP Solar Inverter', 'required': True, 'description': 'Custom Device Name'},
+            '/Serial': {'value': None, 'required': True, 'description': 'Device Serial Number'},
+            '/Info/Manufacturer': {'value': 'MPP Solar', 'required': True, 'description': 'Manufacturer'},
+            '/Info/Model': {'value': 'MPP Solar Inverter', 'required': True, 'description': 'Model'},
+            '/Info/Connection': {'value': 'Serial USB', 'required': True, 'description': 'Connection Type'},
 
             # AC Output paths (core functionality)
             '/Ac/Out/L1/V': {'value': None, 'required': True, 'description': 'AC Output Voltage'},
@@ -139,7 +146,7 @@ class DbusHelper:
         self._solar_paths = {
             # Management paths
             '/Mgmt/ProcessName': {'value': 'dbus-mppsolar-solar', 'required': True, 'description': 'Process Name'},
-            '/Mgmt/ProcessVersion': {'value': '1.0.0', 'required': True, 'description': 'Process Version'},
+            '/Mgmt/ProcessVersion': {'value': '0.0.2-alpha', 'required': True, 'description': 'Process Version'},
             '/Mgmt/Connection': {'value': 'Serial USB', 'required': True, 'description': 'Connection Type'},
 
             # Identification paths
@@ -147,7 +154,7 @@ class DbusHelper:
             '/DeviceType': {'value': 0, 'required': True, 'description': 'Device Type'},
             '/ProductId': {'value': 0xA042, 'required': True, 'description': 'Product ID'},
             '/ProductName': {'value': 'MPP Solar PV Charger', 'required': True, 'description': 'Product Name'},
-            '/FirmwareVersion': {'value': '1.0.0', 'required': True, 'description': 'Firmware Version'},
+            '/FirmwareVersion': {'value': '0.0.2-alpha', 'required': True, 'description': 'Firmware Version'},
             '/HardwareVersion': {'value': 0, 'required': True, 'description': 'Hardware Version'},
             '/Connected': {'value': 0, 'required': True, 'description': 'Connected'},
 
@@ -170,7 +177,7 @@ class DbusHelper:
         self._battery_paths = {
             # Management paths
             '/Mgmt/ProcessName': {'value': 'dbus-mppsolar-battery', 'required': True, 'description': 'Process Name'},
-            '/Mgmt/ProcessVersion': {'value': '1.0.0', 'required': True, 'description': 'Process Version'},
+            '/Mgmt/ProcessVersion': {'value': '0.0.2-alpha', 'required': True, 'description': 'Process Version'},
             '/Mgmt/Connection': {'value': 'Serial USB', 'required': True, 'description': 'Connection Type'},
 
             # Identification paths
@@ -423,9 +430,17 @@ class DbusHelper:
         """
         mapping = {}
 
+        # VRM Portal identification paths (always available)
+        mapping.update({
+            '/CustomName': self.inverter.custom_name(),
+            '/Serial': self.inverter.serial_number,
+            '/Info/Manufacturer': 'MPP Solar',
+            '/Info/Model': self.inverter.product_name(),
+            '/Info/Connection': f'Serial USB ({self.inverter.port})',
+        })
+
         # Multi service mappings
         if self.multi_service:
-            # Core AC output
             if capabilities['has_ac_output']:
                 mapping.update({
                     '/Ac/Out/L1/V': mpp_data.get('ac_voltage'),
@@ -518,17 +533,20 @@ class DbusHelper:
         if ac_voltage > 180 and ac_power > 10:  # Device is actively inverting
             state_mapping['/Mode'] = 3  # On
             state_mapping['/State'] = 9  # Inverting
-            logger.debug("Setting operating state: Mode=3 (On), State=9 (Inverting)")
+            state_mapping['/Status'] = 9  # Inverting
+            logger.debug("Setting operating state: Mode=3 (On), State=9 (Inverting), Status=9 (Inverting)")
         else:
             # Fallback to the reported switch state
             if mpp_data.get('is_switched_on') is False:
                 state_mapping['/Mode'] = 4  # Off
                 state_mapping['/State'] = 0  # Off
-                logger.debug("Setting operating state: Mode=4 (Off), State=0 (Off) - device reports not switched on")
+                state_mapping['/Status'] = 0  # Off
+                logger.debug("Setting operating state: Mode=4 (Off), State=0 (Off), Status=0 (Off) - device reports not switched on")
             else:
                 state_mapping['/Mode'] = 3  # On
                 state_mapping['/State'] = 9  # Inverting
-                logger.debug("Setting operating state: Mode=3 (On), State=9 (Inverting) - fallback")
+                state_mapping['/Status'] = 9  # Inverting
+                logger.debug("Setting operating state: Mode=3 (On), State=9 (Inverting), Status=9 (Inverting) - fallback")
 
         # Check charging status for more detailed state (if applicable)
         is_charging = mpp_data.get('is_charging_on', False)
@@ -537,9 +555,11 @@ class DbusHelper:
         if is_charging or is_scc_charging:
             if mpp_data.get('is_charging_to_float', False):
                 state_mapping['/State'] = 5  # Float charging
+                state_mapping['/Status'] = 5  # Float charging
                 logger.debug("Adjusting state to 5 (Float charging)")
             else:
                 state_mapping['/State'] = 3  # Bulk charging
+                state_mapping['/Status'] = 3  # Bulk charging
                 logger.debug("Adjusting state to 3 (Bulk charging)")
 
         return state_mapping
@@ -585,11 +605,13 @@ class DbusHelper:
         """
         print(f"DEBUG: publish_data called with mpp_data: {mpp_data is not None}, mapping keys: {list(dbus_mapping.keys())}")
         with open('/tmp/debug.log', 'a') as f:
-            f.write(f"publish_data called with mpp_data: {mpp_data is not None}, mapping has Mode: {'/Mode' in dbus_mapping}, State: {'/State' in dbus_mapping}\n")
+            f.write(f"publish_data called with mpp_data: {mpp_data is not None}, mapping has Mode: {'/Mode' in dbus_mapping}, State: {'/State' in dbus_mapping}, Status: {'/Status' in dbus_mapping}\n")
             if '/Mode' in dbus_mapping:
                 f.write(f"Mode value: {dbus_mapping['/Mode']}\n")
             if '/State' in dbus_mapping:
                 f.write(f"State value: {dbus_mapping['/State']}\n")
+            if '/Status' in dbus_mapping:
+                f.write(f"Status value: {dbus_mapping['/Status']}\n")
         try:
             success = True
 
@@ -605,8 +627,8 @@ class DbusHelper:
 
                 for path, value in dbus_mapping.items():
                     if path in self._multi_paths:
-                        # Use service-specific state for Mode/State paths
-                        if path in ['/Mode', '/State']:
+                        # Use service-specific state for Mode/State/Status paths
+                        if path in ['/Mode', '/State', '/Status']:
                             print(f"DEBUG: Processing {path}, value from mapping: {value}, multi_state: {multi_state}")
                             if path in multi_state:
                                 actual_value = multi_state[path]
@@ -682,11 +704,10 @@ class DbusHelper:
         """
         try:
             connected_value = 1 if online else 0
-            status_value = 1 if online else 0
 
             if self.multi_service:
                 self.multi_service['/Connected'] = connected_value
-                self.multi_service['/Status'] = status_value
+                # /Status is now set in publish_data based on operating state
 
             if self.solar_service:
                 self.solar_service['/Connected'] = connected_value

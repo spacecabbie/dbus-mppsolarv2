@@ -120,7 +120,7 @@ def main():
 
     # Update management information
     dbus_helper.multi_service['/Mgmt/ProcessName'] = "dbus-mppsolar"
-    dbus_helper.multi_service['/Mgmt/ProcessVersion'] = "1.0.0"
+    dbus_helper.multi_service['/Mgmt/ProcessVersion'] = "0.0.2-alpha"
 
     # Determine connection type based on port
     if PORT.startswith('/dev/hidraw'):

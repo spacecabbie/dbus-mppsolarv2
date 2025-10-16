@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dbus-mppsolar"
-version = "0.0.1a0"
+version = "0.0.2a0"
 description = "Venus OS D-Bus service for MPP Solar inverters"
 readme = "README.md"
 license = {file = "LICENSE"}
