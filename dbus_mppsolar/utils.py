@@ -7,13 +7,72 @@ This code was generated with the help of Grok XAI
 """
 
 import logging
+import logging.handlers
 import configparser
 from pathlib import Path
 from typing import Any, Union
 
-# Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("MPP-Solar")
+# Enhanced logging setup with debug support
+def setup_logging(debug_enabled: bool = False) -> logging.Logger:
+    """
+    Setup comprehensive logging for the MPP Solar driver.
+
+    Creates console and file handlers with appropriate log levels.
+    File logging includes detailed debug information.
+
+    Args:
+        debug_enabled: Whether to enable debug logging
+
+    Returns:
+        Configured logger instance
+    """
+    # Create logger
+    logger = logging.getLogger('dbus-mppsolar')
+    logger.setLevel(logging.DEBUG)  # Always capture debug level internally
+
+    # Remove any existing handlers to avoid duplicates
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    # Console handler - INFO level or DEBUG if enabled
+    console_level = logging.DEBUG if debug_enabled else logging.INFO
+    console_formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s'
+    )
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(console_level)
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+    # File handler - always DEBUG level with detailed format
+    log_dir = Path('/var/log/dbus-mppsolar')
+    log_dir.mkdir(exist_ok=True)
+
+    file_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+    )
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_dir / 'current.log',
+        maxBytes=5*1024*1024,  # 5MB
+        backupCount=3
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+
+    return logger
+
+# Initialize logger with default settings (will be reconfigured later if needed)
+logger = setup_logging(debug_enabled=False)
+
+PATH_CONFIG_DEFAULT = "config.default.ini"
+PATH_CONFIG_USER = "config.ini"
+
+config = configparser.ConfigParser()
+path = Path(__file__).parents[0]
+default_config_file_path = path.joinpath(PATH_CONFIG_DEFAULT).absolute().__str__()
+custom_config_file_path = path.joinpath(PATH_CONFIG_USER).absolute().__str__()
+config.read([default_config_file_path, custom_config_file_path])
 
 PATH_CONFIG_DEFAULT = "config.default.ini"
 PATH_CONFIG_USER = "config.ini"
@@ -93,14 +152,21 @@ PROTOCOL = get_config_value('PROTOCOL', default='PI30')
 TIMEOUT = int(get_config_value('TIMEOUT', default=5))
 POLL_INTERVAL = int(get_config_value('POLL_INTERVAL', default=1000))
 
-# D-Bus constants
-# D-Bus service identification for Venus OS integration
-DBUS_SERVICE_NAME = get_config_value('SERVICE_NAME', 'DBUS', 'com.victronenergy.inverter')
+# Debug configuration
+DEBUG_ENABLED = get_bool_from_config('DEBUG', 'MPPSOLAR', default=False)
+
+# D-Bus constants - updated for Multi/Solar Charger/Battery architecture
+# Primary service: Multi (inverter/charger functionality)
+DBUS_SERVICE_NAME = get_config_value('SERVICE_NAME', 'DBUS', 'com.victronenergy.multi.mppsolar')
+# Secondary service: Solar Charger (PV functionality)
+SOLAR_SERVICE_NAME = get_config_value('SOLAR_SERVICE_NAME', 'DBUS', 'com.victronenergy.solarcharger.mppsolar')
+# Tertiary service: Battery (battery monitoring)
+BATTERY_SERVICE_NAME = get_config_value('BATTERY_SERVICE_NAME', 'DBUS', 'com.victronenergy.battery.mppsolar')
 DEVICE_INSTANCE = int(get_config_value('DEVICE_INSTANCE', 'DBUS', 0))
 
 # Venus OS constants
 # Product identification for Venus OS device recognition
-PRODUCT_NAME = get_config_value('PRODUCT_NAME', 'VENUS', 'MPP Solar Inverter')
+PRODUCT_NAME = get_config_value('PRODUCT_NAME', 'VENUS', 'MPP Solar Axpert VP 3000-24')
 PRODUCT_ID = int(get_config_value('PRODUCT_ID', 'VENUS', '0xBFFF'), 16)
 DEVICE_TYPE = int(get_config_value('DEVICE_TYPE', 'VENUS', '0xFFFF'), 16)
 

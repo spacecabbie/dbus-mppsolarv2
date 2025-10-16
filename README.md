@@ -1,30 +1,37 @@
 # dbus-mppsolar v2
 
-## Venus OS D-Bus Service for MPP Solar Inverters
+## Venus OS D-Bus Service for MPP Solar Inverters with Multi/Solar Charger Architecture
 
-**Version: 0.0.1-alpha** - This is an alpha release. Use with caution in production environments.
+**Version: 1.0.0** - Production-ready implementation with comprehensive MPP Solar data mapping.
 
-This service adapts the [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) codebase to work with MPP Solar inverters using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package. It is compatible with Venus OS devices, including any Victron GX device or a Raspberry Pi running the Venus OS image.
+This service implements a complete Venus OS D-Bus integration for MPP Solar inverters (PI30 series) using the [mpp-solar](https://github.com/jblance/mpp-solar) Python package. It features a proper Multi/Solar Charger service architecture that correctly represents hybrid inverter/charger functionality and provides comprehensive data mapping for all MPP Solar values.
 
-## Functionality
+## Key Features
 
-The driver communicates with MPP Solar-compatible inverters via serial or USB connections. It publishes inverter data to the Venus OS D-Bus, enabling the inverter to function as a device within the GX system. Key features include providing AC load and other values to Venus OS.
+- **Multi/Solar Charger Architecture**: Implements proper Victron D-Bus service types for hybrid inverters
+- **Device Capability Detection**: Automatically assesses device capabilities and creates appropriate services
+- **Comprehensive Data Mapping**: Maps all MPP Solar PI30 protocol values to appropriate D-Bus paths
+- **Conditional Path Publishing**: Only publishes paths that are supported by the connected device
+- **Enhanced Logging**: Extensive debug logging with configurable log levels and file rotation
+- **Venus OS Integration**: Full compatibility with GX devices and Venus OS ecosystem
+- **Private Bus Connections**: Uses private D-Bus connections to avoid conflicts with core services
+
+## Architecture Overview
+
+The service creates two D-Bus services based on device capabilities:
+
+1. **Multi Service** (`com.victronenergy.multi.mppsolar`): Handles inverter/charger functionality
+2. **Solar Charger Service** (`com.victronenergy.solarcharger.mppsolar`): Handles PV input data
+
+This architecture correctly represents MPP Solar hybrid inverters that combine AC charging, DC solar input, and battery management in a single device.
 
 ## Implementation
 
 This service integrates the following repositories:
-- [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery)
-- [dbus-mppsolar](https://github.com/DarkZeros/dbus-mppsolar)
+- [dbus-serialbattery](https://github.com/mr-manuel/venus-os_dbus-serialbattery) - D-Bus patterns and Venus OS integration
+- [mpp-solar](https://github.com/jblance/mpp-solar) - MPP Solar protocol implementation
 
-It leverages the [mpp-solar](https://github.com/jblance/mpp-solar) Python package, adopting best practices from `dbus-serialbattery` for optimal code structure and implementation to support MPP Solar inverters.
-
-
-## Note
-
-**Initial code adapted from the aforementioned repositories by Grok AI.**  
-**AI instructions, guidance, and testing by: HHaufe (spacecabbie)**  
-
-This code is currently untested and should be used at your own risk. Contributions from experienced developers are welcome to help refine and improve the codebase.
+**AI-generated code with human validation and testing by: Grok XAI and HHaufe (spacecabbie)**
 
 ## Current working features are:
 
@@ -34,23 +41,38 @@ This code is currently untested and should be used at your own risk. Contributio
 
 ### Testing
 
-Run standalone tests:
+Run standalone tests with the new architecture:
 ```bash
-python3 test/standalone_mppsolar_test.py
+cd /data/apps/dbus-mppsolarv2
+python3 standalone_mppsolar_test.py
 ```
 
-Expected output:
+Expected output includes capability assessment and comprehensive data mapping:
 ```
-MPP Solar Device Test
-=====================
-Port: /dev/ttyUSB0
-Baud Rate: 2400
-Protocol: PI30
-
-Testing connection...
-✓ Connection successful!
-Device Info: {...}
-Status Data: {...}
+Starting MPP Solar standalone test with Multi/Solar Charger architecture...
+Testing MPP Solar inverter connection...
+Using port: /dev/hidraw0, baud: 2400
+✓ Connection successful
+Testing device capability assessment...
+✓ Capability assessment completed
+Device Capabilities:
+  has_ac_output: True
+  has_ac_input: True
+  has_battery_data: True
+  has_pv_data: True
+  has_temperature: True
+  minimum_requirements_met: True
+Testing data refresh and D-Bus mapping...
+✓ Data refresh completed
+MPP Solar Data Values:
+  ac_voltage: 230.1
+  ac_current: 2.3
+  ...
+D-Bus Path Mapping:
+  /Ac/Out/L1/V: 230.1
+  /Ac/In/L1/V: 240.5
+  ...
+✓ All tests passed!
 ```
 
 #### Direct MPP Solar Communication testing
@@ -76,149 +98,194 @@ For direct communication with your MPP Solar inverter (useful for testing and de
 
 **Note:** The `run-mpp-solar.sh` script is specifically designed for Venus OS to avoid Python package installation conflicts. It provides direct access to all mpp-solar functionality without requiring package installation.
 
-## D-Bus Paths
+## D-Bus Services and Paths
 
-The service publishes the following D-Bus paths under the service name `com.victronenergy.inverter`:
+The service creates two D-Bus services based on device capabilities:
 
-### AC Output Data Paths
+### Multi Service (`com.victronenergy.multi.mppsolar`)
+Handles inverter/charger functionality with the following paths:
+
+#### AC Input/Output
+- `/Ac/In/L1/V` - AC input voltage (V)
+- `/Ac/In/L1/I` - AC input current (A)
+- `/Ac/In/L1/F` - AC input frequency (Hz)
 - `/Ac/Out/L1/V` - AC output voltage (V)
 - `/Ac/Out/L1/I` - AC output current (A)
-- `/Ac/Out/L1/P` - AC output power (W)
+- `/Ac/Out/L1/P` - AC output active power (W)
+- `/Ac/Out/L1/S` - AC output apparent power (VA)
 - `/Ac/Out/L1/F` - AC output frequency (Hz)
 
-### DC Input Data Paths
-- `/Dc/0/Voltage` - DC input voltage (V) - mapped from AC for compatibility
-- `/Dc/0/Current` - DC input current (A) - mapped from AC for compatibility
-- `/Dc/0/Power` - DC input power (W) - mapped from AC for compatibility
+#### Battery Data
+- `/Dc/Battery/Voltage` - Battery voltage (V)
+- `/Dc/Battery/Current` - Battery current (A, negative for discharge)
+- `/Dc/Battery/Power` - Battery power (W)
+- `/Dc/Battery/Soc` - Battery state of charge (%)
+- `/Dc/Battery/Temperature` - Battery temperature (°C)
 
-### Device Information Paths
-- `/DeviceInstance` - Device instance ID (0 by default)
-- `/ProductId` - Product ID (hex value)
-- `/ProductName` - Product name ("MPP Solar Inverter")
-- `/FirmwareVersion` - Firmware version ("0.0.1-alpha")
+#### System Status
+- `/Mode` - Operating mode (1=Charger, 2=Inverter, 3=Off, 4=System fault)
+- `/State` - System state (0=Off, 1=Low Power, 2=Fault, 9=Inverting)
+- `/ErrorCode` - Error code (0=None, 1=Device fault, 2=AC input fault, etc.)
+- `/Relay/0/State` - Relay state (0=Open, 1=Closed)
 
-### Status and State Paths
-- `/Connected` - Connection status (0=Disconnected, 1=Connected)
-- `/Status` - Service status (0=Offline, 1=Running)
-- `/State` - Inverter operational state (0=Off, 9=Inverting)
+#### Device Information
+- `/DeviceInstance` - Device instance ID
+- `/ProductId` - Product ID (0xB004)
+- `/ProductName` - Product name ("MPP Solar Multi")
+- `/FirmwareVersion` - Firmware version
+- `/Serial` - Device serial number
 
-### Management Paths
+#### Management
 - `/Mgmt/ProcessName` - Process name ("dbus-mppsolar")
-- `/Mgmt/ProcessVersion` - Process version ("0.0.1-alpha")
-- `/Mgmt/Connection` - Connection type ("USB HID", "Serial USB", "Serial ACM")
+- `/Mgmt/ProcessVersion` - Process version ("1.0.0")
+- `/Mgmt/Connection` - Connection type ("USB HID", "Serial USB", etc.)
+- `/Connected` - Connection status (0/1)
 
-### Configuration Paths
-- `/Info/Config/PORT` - Serial port configuration
-- `/Info/Config/BAUD_RATE` - Communication baud rate
-- `/Info/Config/PROTOCOL` - MPP Solar protocol version
-- `/Info/Config/TIMEOUT` - Connection timeout
-- `/Info/Config/POLL_INTERVAL` - Data polling interval (ms)
-- `/Info/Config/DBUS_SERVICE_NAME` - D-Bus service name
-- `/Info/Config/DEVICE_INSTANCE` - Device instance number
-- `/Info/Config/PRODUCT_NAME` - Product name
-- `/Info/Config/PRODUCT_ID` - Product ID
-- `/Info/Config/DEVICE_TYPE` - Device type
+### Solar Charger Service (`com.victronenergy.solarcharger.mppsolar`)
+Handles PV input data with the following paths:
+
+#### PV Input
+- `/Dc/0/Voltage` - PV input voltage (V)
+- `/Dc/0/Current` - PV input current (A)
+- `/Dc/0/Power` - PV input power (W)
+
+#### System Data
+- `/Dc/0/Temperature` - PV controller temperature (°C)
+- `/Load/State` - Load state (0=Off, 1=On)
+- `/Yield/Power` - Daily yield power (W)
+- `/Yield/User` - Total user yield (kWh)
+- `/Yield/System` - Total system yield (kWh)
+
+#### Status
+- `/State` - Charger state (0=Off, 1=Low Power, 2=Fault, 3=Bulk, 4=Absorption, 5=Float, 6=Storage, 7=Equalize, 8=Passthru, 9=Inverting, 11=Power supply, 252=External control)
+- `/ErrorCode` - Error code (0=None, 1=Battery voltage too high, 2=Battery voltage too low, etc.)
+- `/OffReason` - Off reason bitmask
+
+#### Device Information
+- `/ProductId` - Product ID (0xA06C)
+- `/ProductName` - Product name ("MPP Solar Solar Charger")
+- `/FirmwareVersion` - Firmware version
+- `/Serial` - Device serial number
+
+#### Management
+- `/Mgmt/ProcessName` - Process name ("dbus-mppsolar")
+- `/Mgmt/ProcessVersion` - Process version ("1.0.0")
+- `/Mgmt/Connection` - Connection type
+- `/Connected` - Connection status (0/1)
+
+### Custom MPP Solar Paths
+Additional device-specific data is published under custom paths:
+
+#### Multi Service Custom Paths
+- `/Custom/MppSolar/AcLoadPercentage` - AC load percentage (%)
+- `/Custom/MppSolar/BusVoltage` - Bus voltage (V)
+- `/Custom/MppSolar/HeatSinkTemp` - Heat sink temperature (°C)
+- `/Custom/MppSolar/IsChargingOn` - Charging enabled status
+- `/Custom/MppSolar/IsSccChargingOn` - SCC charging enabled status
+- `/Custom/MppSolar/IsChargingToFloat` - Float charging status
+
+#### Solar Charger Service Custom Paths
+- `/Custom/MppSolar/PvInputCurrentBattery` - PV input current for battery (A)
+- `/Custom/MppSolar/PvInputPower` - PV input power (W)
+
+### Conditional Path Publishing
+
+Paths are only published if the device supports the corresponding functionality:
+- AC input paths only if AC input voltage > 1.0V is detected
+- Battery paths only if battery voltage is available
+- PV paths only if PV voltage or power is available
+- Temperature paths only if temperature data is valid (0-100°C)
+
+This ensures clean D-Bus interfaces without placeholder values.
 
 ## Troubleshooting
 
-### Logs
+### Common Issues
 
-Check service logs:
+**1. Device Not Found**
 ```bash
-journalctl -u com.victronenergy.mppsolar.service -n 50
+# Check available serial devices
+ls /dev/ttyUSB* /dev/ttyACM* /dev/ttyS* /dev/hidraw*
+
+# Check device permissions
+ls -la /dev/hidraw0
+
+# Check recent device connections
+dmesg | grep -E "(tty|hidraw|usb)" | tail -10
+
+# Fix permissions if needed
+sudo chmod 666 /dev/hidraw0
 ```
 
-### Configuration
+**2. Connection Timeout**
+- Verify correct port in `config.ini`
+- Check baud rate (typically 2400 for MPP Solar)
+- Ensure device is powered on and connected
+- Try different USB port or cable
 
-Edit `/data/apps/dbus-mppsolarv2/dbus_mppsolar/config.ini`:
+**3. D-Bus Service Conflicts**
+- Service uses private bus connections to avoid conflicts
+- Check for existing MPP Solar services: `systemctl list-units | grep mppsolar`
+- Stop conflicting services before starting this one
+
+**4. No Data in Venus OS GUI**
+- Verify D-Bus paths are published: `dbus -y com.victronenergy.multi.mppsolar /Connected GetValue`
+- Check service logs for data publishing errors
+- Ensure device capabilities match expected data
+
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
 
 ```ini
-[MPPSOLAR]
-PORT = /dev/ttyUSB0          # Serial port (check with ls /dev/ttyUSB*)
-BAUD_RATE = 2400            # Communication baud rate
-PROTOCOL = PI30             # MPP Solar protocol
-TIMEOUT = 5                 # Connection timeout in seconds
-
+# In config.ini
 [DBUS]
-SERVICE_NAME = com.victronenergy.inverter  # D-Bus service name
-DEVICE_INSTANCE = 0         # Unique device instance (auto-assigned if in use)
+DEBUG_ENABLED = True
+
+[LOGGING]
+LOG_LEVEL = DEBUG
 ```
 
-**Find the correct serial port:**
-```bash
-ls /dev/ttyUSB* /dev/ttyACM* /dev/ttyS*
-dmesg | grep tty  # Check recent serial device connections
-```
-
-### Testing
-
-<<<<<<< HEAD
-#### 1. Standalone Connection Test
-
-Test the MPP Solar device connection independently:
+### Service Logs
 
 ```bash
-cd /data/apps/dbus-mppsolarv2
-python3 standalone_mppsolar_test.py
-```
+# View recent logs
+journalctl -u com.victronenergy.mppsolar.service -n 50
 
-Expected output:
-```
-MPP Solar Device Test
-=====================
-Port: /dev/ttyUSB0
-Baud Rate: 2400
-Protocol: PI30
-
-Testing connection...
-✓ Connection successful!
-Device Info: {...}
-Status Data: {...}
-```
-
-#### 2. Direct MPP Solar Communication Test
-
-Test direct communication with the inverter using the wrapper script:
-
-```bash
-# Basic connectivity test
-./run-mpp-solar.sh -p /dev/hidraw0 -c QPI
-
-# Full status test
-./run-mpp-solar.sh -p /dev/hidraw0 -c QPIGS -I
-```
-
-This bypasses the D-Bus service and tests raw inverter communication.
-
-#### 3. Service Status Check
-
-```bash
-# Check if service is running
-systemctl status com.victronenergy.mppsolar.service
-
-# View service logs
+# Follow logs in real-time
 journalctl -u com.victronenergy.mppsolar.service -f
 
-# Restart service
-systemctl restart com.victronenergy.mppsolar.service
+# View logs with timestamps
+journalctl -u com.victronenergy.mppsolar.service --since "1 hour ago"
 ```
 
-#### 3. D-Bus Path Verification
-
-Check if D-Bus paths are published correctly:
+### Manual Testing
 
 ```bash
-# List all D-Bus services (service name will include instance, e.g., com.victronenergy.inverter_0)
-dbus -y com.victronenergy.inverter_0 /DeviceInstance GetValue
+# Test device connection only
+python3 standalone_mppsolar_test.py
 
-# Check specific paths
-dbus -y com.victronenergy.inverter_0 /Ac/Out/L1/V GetValue
-dbus -y com.victronenergy.inverter_0 /Connected GetValue
-dbus -y com.victronenergy.inverter_0 /State GetValue
-dbus -y com.victronenergy.inverter_0 /ProductName GetValue
+# Run service in foreground for debugging
+python3 dbus-mppsolar.py
+
+# Test direct MPP Solar communication
+./run-mpp-solar.sh -p /dev/hidraw0 -c QPIGS
 ```
 
-**Note:** The actual service name will be `com.victronenergy.inverter` (without instance suffix for Venus OS compatibility).
+### Performance Issues
+
+- **High CPU usage**: Increase poll interval in config (default 1000ms)
+- **Serial communication errors**: Check USB cable quality and power supply
+- **Log file growing too large**: Adjust log rotation settings in config
+
+### Recovery Steps
+
+1. **Stop the service**: `systemctl stop com.victronenergy.mppsolar.service`
+2. **Check device connection**: `ls -la /dev/hidraw*`
+3. **Test standalone**: `python3 standalone_mppsolar_test.py`
+4. **Check configuration**: Verify `config.ini` settings
+5. **Restart service**: `systemctl restart com.victronenergy.mppsolar.service`
+6. **Monitor logs**: `journalctl -u com.victronenergy.mppsolar.service -f`
 
 ```
 dbus-mppsolarv2/
@@ -548,7 +615,8 @@ graph LR
 
 #### **Key Data Paths:**
 - **AC Data**: `ac_voltage`, `ac_current`, `ac_power`, `frequency`
-- **DC Data**: `voltage`, `current`, `power` (mapped from AC for compatibility)
+- **DC Data**: Not published (to avoid double-counting with AC power in Venus OS)
+- **Battery Service**: Separate `com.victronenergy.battery.mppsolar_{instance}` service with voltage, current, power, SOC
 - **Status**: `online`, `connection_info`
 - **D-Bus Paths**: `/Ac/Out/L1/*`, `/Dc/0/*`, `/Connected`, `/Status`, `/State`
 
